@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { TEMP_STYLE } from "../lib/config";
 
-export default function DealsTable({ deals, options, closerName }) {
+export default function DealsTable({ deals, options, closerName, emptyLabel }) {
   const [rows, setRows] = useState(() =>
     deals.map((d) => ({ ...d, _temp: d.temperatura, _obs: d.observacoes }))
   );
@@ -108,7 +108,7 @@ export default function DealsTable({ deals, options, closerName }) {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ textAlign: "center", color: "var(--muted)", padding: "40px" }}>
-                  Nenhum negócio ativo no funil.
+                  {emptyLabel || "Nenhum negócio ativo no funil."}
                 </td>
               </tr>
             )}
@@ -117,7 +117,8 @@ export default function DealsTable({ deals, options, closerName }) {
       </div>
       <div className="foot">
         <span>
-          {rows.length} negócio{rows.length === 1 ? "" : "s"} · {closerName}
+          {rows.length} negócio{rows.length === 1 ? "" : "s"}
+          {closerName ? ` · ${closerName}` : ""}
           {msg && <> · <span className={msg.ok ? "saved" : "err"}>{msg.text}</span></>}
         </span>
         <button className="save" onClick={saveAll} disabled={saving || dirty.length === 0}>
