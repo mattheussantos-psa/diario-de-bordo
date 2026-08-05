@@ -129,6 +129,7 @@ export default async function Page({ searchParams }) {
       </div>
 
       <DealsTable
+        key={`${searchParams?.closer || "me"}-${seg || "all"}`}
         deals={rows}
         options={tempOptions}
         closerName={viewOwner ? viewOwner.name : ""}
