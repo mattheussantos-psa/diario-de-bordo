@@ -6,7 +6,7 @@ import {
   getOpenDeals,
   getTemperaturaOptions,
 } from "../lib/hubspot";
-import { CLOSER_PIPELINES, AVATARS } from "../lib/config";
+import { CLOSER_PIPELINES, AVATARS, dealUrl } from "../lib/config";
 import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
 
@@ -84,6 +84,7 @@ export default async function Page({ searchParams }) {
     next: nextActivity(d.nextActivity),
     amountText: brl(d.amount),
     adv: /avanç/i.test(d.stageLabel),
+    url: dealUrl(d.id),
   }));
 
   const segs = [...new Set(rows.map((d) => CLOSER_PIPELINES[d.pipeline]).filter(Boolean))];

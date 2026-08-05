@@ -9,6 +9,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel }) {
   );
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null); // {ok:bool, text}
+  const [page, setPage] = useState(0);
+
+  const PAGE_SIZE = 10;
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pageSafe = Math.min(page, pageCount - 1);
+  const visible = rows.slice(pageSafe * PAGE_SIZE, pageSafe * PAGE_SIZE + PAGE_SIZE);
 
   const dirty = useMemo(
     () => rows.filter((r) => r._temp !== r.temperatura || r._obs !== r.observacoes),
@@ -58,10 +64,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {visible.map((r) => (
               <tr key={r.id}>
                 <td className="deal">
-                  {r.name}
+                  <a className="deal-link" href={r.url} target="_blank" rel="noreferrer">
+                    {r.name}
+                  </a>
                   <small>{r.amountText}</small>
                 </td>
                 <td>
@@ -121,9 +129,18 @@ export default function DealsTable({ deals, options, closerName, emptyLabel }) {
           {closerName ? ` · ${closerName}` : ""}
           {msg && <> · <span className={msg.ok ? "saved" : "err"}>{msg.text}</span></>}
         </span>
-        <button className="save" onClick={saveAll} disabled={saving || dirty.length === 0}>
-          {saving ? "Salvando…" : dirty.length ? `Salvar diário do dia (${dirty.length})` : "Tudo salvo"}
-        </button>
+        <div className="foot-actions">
+          {pageCount > 1 && (
+            <div className="pager">
+              <button onClick={() => setPage(pageSafe - 1)} disabled={pageSafe === 0}>‹</button>
+              <span>Página {pageSafe + 1} de {pageCount}</span>
+              <button onClick={() => setPage(pageSafe + 1)} disabled={pageSafe >= pageCount - 1}>›</button>
+            </div>
+          )}
+          <button className="save" onClick={saveAll} disabled={saving || dirty.length === 0}>
+            {saving ? "Salvando…" : dirty.length ? `Salvar diário do dia (${dirty.length})` : "Tudo salvo"}
+          </button>
+        </div>
       </div>
     </div>
   );
