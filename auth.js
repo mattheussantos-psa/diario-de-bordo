@@ -3,6 +3,8 @@ import Google from "next-auth/providers/google";
 import { ADMIN_EMAILS, ALLOWED_DOMAIN } from "./lib/config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true, // confia no host do deploy (Vercel) — exigido pelo NextAuth v5
+  pages: { signIn: "/login" },
   providers: [Google],
   callbacks: {
     // Só e-mails do domínio da empresa entram.
