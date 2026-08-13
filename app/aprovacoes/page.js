@@ -5,6 +5,7 @@ import { getAllOwners, getDealsByIds } from "../../lib/hubspot";
 import { getWeekPlans, dbReady } from "../../lib/db";
 import { weekKey, weekLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, AVATARS } from "../../lib/config";
+import { seedWeek } from "../../lib/seed";
 import ApprovalCard from "../ApprovalCard";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,12 @@ export default async function Aprovacoes({ searchParams }) {
   const avatar = AVATARS[session.user.email.toLowerCase()];
   const week = weekKey();
   const filtro = searchParams?.st || "pendentes";
+
+  // Popula cronogramas de demonstração e volta para a lista.
+  if (searchParams?.simular === "1") {
+    await seedWeek(week);
+    redirect("/aprovacoes");
+  }
 
   const [owners, plans] = await Promise.all([getAllOwners(), getWeekPlans(week)]);
 
@@ -81,9 +88,16 @@ export default async function Aprovacoes({ searchParams }) {
       {dbReady() && lista.length === 0 && (
         <div className="card">
           <div className="cal-empty">
-            {filtro === "pendentes"
-              ? "Nenhum cronograma aguardando aprovação nesta semana."
-              : "Nada por aqui nesta semana."}
+            <p style={{ margin: "0 0 18px" }}>
+              {filtro === "pendentes"
+                ? "Nenhum cronograma aguardando aprovação nesta semana."
+                : "Nada por aqui nesta semana."}
+            </p>
+            {todos.length === 0 && (
+              <Link className="btn-primary" href="/aprovacoes?simular=1">
+                Simular cronogramas dos closers
+              </Link>
+            )}
           </div>
         </div>
       )}
