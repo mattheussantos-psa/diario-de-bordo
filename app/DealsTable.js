@@ -26,9 +26,21 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
   const [planBusy, setPlanBusy] = useState(false);
 
   const PAGE_SIZE = 10;
-  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  // Com o plano fechado, o que será trabalhado vem primeiro, na ordem dos dias.
+  // Em rascunho a ordem fica estável para as linhas não pularem ao marcar.
+  const ordered = useMemo(() => {
+    if (status !== "aprovado") return rows;
+    const dentro = (r) => r.id in items;
+    return [...rows].sort((a, b) => {
+      if (dentro(a) !== dentro(b)) return dentro(a) ? -1 : 1;
+      if (dentro(a)) return (items[a.id] ?? 9) - (items[b.id] ?? 9);
+      return 0;
+    });
+  }, [rows, items, status]);
+
+  const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, pageCount - 1);
-  const visible = rows.slice(pageSafe * PAGE_SIZE, pageSafe * PAGE_SIZE + PAGE_SIZE);
+  const visible = ordered.slice(pageSafe * PAGE_SIZE, pageSafe * PAGE_SIZE + PAGE_SIZE);
 
   const dirty = useMemo(
     () => rows.filter((r) => r._temp !== r.temperatura || r._obs !== r.observacoes),
@@ -187,6 +199,11 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
                   </td>
                 )}
                 <td className="deal">
+                  {r.id in items && (
+                    <span className="plan-flag">
+                      {DIAS.find((d) => d.v === items[r.id])?.label || "No plano"}
+                    </span>
+                  )}
                   <a className="deal-link" href={r.url} target="_blank" rel="noreferrer">
                     {r.name}
                   </a>
