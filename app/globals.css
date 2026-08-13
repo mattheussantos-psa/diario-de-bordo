@@ -194,6 +194,45 @@ tbody tr.in-plan:hover { background: #eef4fe; }
 .cal-empty { padding: 60px 20px; text-align: center; color: var(--muted); font-size: 14px; }
 @media (max-width: 900px) { .cal-grid { grid-template-columns: 1fr; } .cal-col { min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); } }
 
+/* Aprovações */
+.seg-toggle a { text-decoration: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 999px; }
+.seg-toggle a.on { background: var(--bg); color: var(--azul); box-shadow: var(--shadow); }
+.aprov-list { display: flex; flex-direction: column; gap: 16px; }
+.aprov-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 18px; border-left: 4px solid var(--azul); }
+.aprov-card.st-aprovado { border-left-color: #17803d; }
+.aprov-card.st-reprovado { border-left-color: var(--laranja); }
+.aprov-card.st-rascunho { border-left-color: var(--line); }
+.aprov-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.aprov-quem { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+.aprov-nome { font-size: 17px; font-weight: 700; color: var(--ink); }
+.aprov-seg { font-size: 11px; font-weight: 700; color: var(--azul); background: var(--azul-soft); padding: 4px 9px; border-radius: 999px; }
+.aprov-resumo { display: flex; gap: 18px; font-size: 13px; color: var(--muted); }
+.aprov-resumo b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.aprov-dias { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.aprov-dia { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 96px; }
+.aprov-dia-lab { font-size: 11px; font-weight: 700; letter-spacing: .5px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+.aprov-vazio { color: var(--line); font-size: 16px; text-align: center; padding-top: 6px; }
+.aprov-item { display: block; text-decoration: none; background: var(--bg); border: 1px solid var(--line);
+  border-left: 3px solid var(--azul); border-radius: 8px; padding: 7px 9px; margin-bottom: 6px; transition: .15s; }
+.aprov-item:hover { box-shadow: var(--shadow); }
+.aprov-item.v-fc { border-left-color: var(--azul); }
+.aprov-item.v-vv { border-left-color: var(--laranja); }
+.aprov-item.v-lm { border-left-color: var(--muted); }
+.aprov-item.v-cl { border-left-color: #c98a4b; }
+.aprov-item.v-none { border-left-color: var(--line); }
+.aprov-item-nome { display: block; font-size: 12px; font-weight: 600; color: var(--ink); line-height: 1.3;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.aprov-item-val { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.aprov-semdia { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; }
+.aprov-semdia-lab { color: var(--muted); font-weight: 600; }
+.aprov-chip { text-decoration: none; background: var(--ink-soft); color: var(--ink); font-size: 12px;
+  padding: 5px 11px; border-radius: 999px; }
+.aprov-motivo { margin-top: 12px; color: var(--laranja); font-size: 13px; font-weight: 600; }
+.aprov-acoes { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 14px; flex-wrap: wrap; font-size: 12px; }
+.aprov-por { color: var(--muted); }
+@media (max-width: 900px) { .aprov-dias { grid-template-columns: 1fr; } }
+
 .empty { max-width: 560px; margin: 80px auto; text-align: center; color: var(--muted); }
 .empty h2 { font-family: "Bruta Pro"; color: var(--ink); font-size: 26px; text-transform: uppercase; }
 

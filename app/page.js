@@ -11,7 +11,7 @@ import DealsTable from "./DealsTable";
 import CalendarView from "./CalendarView";
 import AdminBar from "./AdminBar";
 import Link from "next/link";
-import { getPlan, dbReady } from "../lib/db";
+import { getPlan, getWeekPlans, dbReady } from "../lib/db";
 import { weekKey, weekLabel } from "../lib/week";
 
 export const dynamic = "force-dynamic";
@@ -104,6 +104,9 @@ export default async function Page({ searchParams }) {
   const week = weekKey();
   const plan = viewOwner ? await getPlan(viewOwner.ownerId, week) : null;
   const isAgenda = searchParams?.view === "agenda";
+  const pendentes = isAdmin
+    ? (await getWeekPlans(week)).filter((p) => p.status === "enviado").length
+    : 0;
 
   // Mantém closer/segmento ao alternar a visualização.
   const qs = (patch) => {
@@ -148,7 +151,17 @@ export default async function Page({ searchParams }) {
       </div>
 
       {isAdmin ? (
-        <AdminBar owners={owners} selected={viewOwner ? String(viewOwner.ownerId) : ""} seg={seg} />
+        <>
+          <div className="viewbar">
+            <div className="viewtoggle">
+              <Link href="/" className="on">Diário de bordo</Link>
+              <Link href="/aprovacoes">
+                Aprovações{pendentes > 0 ? ` (${pendentes})` : ""}
+              </Link>
+            </div>
+          </div>
+          <AdminBar owners={owners} selected={viewOwner ? String(viewOwner.ownerId) : ""} seg={seg} />
+        </>
       ) : (
         <div className="bar">
           <div className="ctx"><span className="ctx-dot" />Segmento: {seg}</div>
