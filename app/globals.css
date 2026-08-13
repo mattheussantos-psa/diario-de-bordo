@@ -178,6 +178,12 @@ tbody tr.in-plan:hover { background: #eef4fe; }
   transition: .15s; }
 .cal-card:hover { border-color: #d3d7de; border-left-color: var(--azul); box-shadow: var(--shadow); transform: translateY(-1px); }
 .cal-dot { display: none; }
+.cal-qtd { font-size: 10.5px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.cal-closer { font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
+  color: var(--azul); margin-bottom: 1px; }
+.cal-card.v-vv .cal-closer { color: var(--laranja); }
+.cal-card.v-cl .cal-closer { color: #a9702f; }
+.cal-card.v-lm .cal-closer, .cal-card.v-none .cal-closer { color: var(--muted); }
 .cal-nome { font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.3;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .cal-meta { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; gap: 7px; align-items: center; }

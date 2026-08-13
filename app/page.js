@@ -158,6 +158,7 @@ export default async function Page({ searchParams }) {
               <Link href="/aprovacoes">
                 Aprovações{pendentes > 0 ? ` (${pendentes})` : ""}
               </Link>
+              <Link href="/agenda">Agenda geral</Link>
             </div>
           </div>
           <AdminBar owners={owners} selected={viewOwner ? String(viewOwner.ownerId) : ""} seg={seg} />

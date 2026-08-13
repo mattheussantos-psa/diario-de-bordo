@@ -90,6 +90,7 @@ export default async function Aprovacoes({ searchParams }) {
         <div className="viewtoggle">
           <Link href="/" className="">Diário de bordo</Link>
           <Link href="/aprovacoes" className="on">Aprovações{pendentes.length ? ` (${pendentes.length})` : ""}</Link>
+          <Link href="/agenda">Agenda geral</Link>
         </div>
         <div className="seg-toggle">
           {[["pendentes", "Aguardando"], ["decididos", "Decididos"], ["todos", "Todos"], ["historico", "Histórico"]].map(([v, l]) => (
