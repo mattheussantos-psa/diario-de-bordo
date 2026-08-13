@@ -189,9 +189,9 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
         <table>
           <thead>
             <tr>
-              {canPlan && <th style={{ width: "13%" }}>Plano da semana</th>}
-              <th style={{ width: "21%" }}>Nome do negócio</th>
-              <th style={{ width: "15%" }}>Etapa atual</th>
+              {canPlan && <th style={{ width: "17%" }}>Plano da semana</th>}
+              <th style={{ width: "19%" }}>Nome do negócio</th>
+              <th style={{ width: "13%" }}>Etapa atual</th>
               <th style={{ width: "15%" }}>Próxima atividade</th>
               <th style={{ width: "18%" }}>Evolução buscada</th>
               <th style={{ width: "18%" }}>Observação</th>
@@ -212,17 +212,20 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
                       <span>Vou trabalhar</span>
                     </label>
                     {r.id in items && (
-                      <select
-                        className="dia-select"
-                        value={items[r.id] ?? ""}
-                        onChange={(e) => setDia(r.id, e.target.value)}
-                        disabled={locked}
-                      >
-                        <option value="">Dia…</option>
+                      <div className="dias" role="group" aria-label="Dia da semana">
                         {DIAS.map((d) => (
-                          <option key={d.v} value={d.v}>{d.label}</option>
+                          <button
+                            key={d.v}
+                            type="button"
+                            className={"dia" + (items[r.id] === d.v ? " on" : "")}
+                            onClick={() => setDia(r.id, items[r.id] === d.v ? "" : d.v)}
+                            disabled={locked}
+                            aria-pressed={items[r.id] === d.v}
+                          >
+                            {d.label}
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     )}
                   </td>
                 )}
