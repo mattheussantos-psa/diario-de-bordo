@@ -233,6 +233,22 @@ tbody tr.in-plan:hover { background: #eef4fe; }
 .aprov-por { color: var(--muted); }
 @media (max-width: 900px) { .aprov-dias { grid-template-columns: 1fr; } }
 
+/* Histórico de aprovações */
+.hist-bloco { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.hist-semana { padding: 12px 18px; background: var(--surface-2); border-bottom: 1px solid var(--line);
+  font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
+.hist-linhas { display: flex; flex-direction: column; }
+.hist-linha { display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--line);
+  font-size: 13px; flex-wrap: wrap; border-left: 3px solid transparent; }
+.hist-linha:last-child { border-bottom: 0; }
+.hist-linha.st-aprovado { border-left-color: #17803d; }
+.hist-linha.st-reprovado { border-left-color: var(--laranja); }
+.hist-linha.st-enviado { border-left-color: var(--azul); }
+.hist-nome { font-weight: 600; color: var(--ink); min-width: 190px; }
+.hist-n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.hist-por { color: var(--muted); font-size: 12px; }
+.hist-motivo { color: var(--laranja); font-size: 12px; font-weight: 600; }
+
 .empty { max-width: 560px; margin: 80px auto; text-align: center; color: var(--muted); }
 .empty h2 { font-family: "Bruta Pro"; color: var(--ink); font-size: 26px; text-transform: uppercase; }
 

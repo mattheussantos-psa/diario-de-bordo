@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { getAllOwners, getDealsByIds } from "../../lib/hubspot";
-import { getWeekPlans, dbReady } from "../../lib/db";
+import { getWeekPlans, getPlansHistory, dbReady } from "../../lib/db";
 import { weekKey, weekLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, AVATARS } from "../../lib/config";
 import { seedWeek } from "../../lib/seed";
@@ -45,7 +45,22 @@ export default async function Aprovacoes({ searchParams }) {
 
   const pendentes = todos.filter((p) => p.status === "enviado");
   const decididos = todos.filter((p) => p.status === "aprovado" || p.status === "reprovado");
-  const lista = filtro === "todos" ? todos : filtro === "decididos" ? decididos : pendentes;
+  const isHistorico = filtro === "historico";
+  const lista = isHistorico
+    ? []
+    : filtro === "todos"
+    ? todos
+    : filtro === "decididos"
+    ? decididos
+    : pendentes;
+
+  // Histórico: semanas anteriores, agrupadas.
+  const historico = isHistorico ? await getPlansHistory(week) : [];
+  const porSemana = {};
+  for (const h of historico) {
+    if (!segOf(h.ownerId)) continue;
+    (porSemana[h.week] ||= []).push({ ...h, nome: nomeDe[h.ownerId] || `Closer ${h.ownerId}` });
+  }
 
   // Um único batch para todos os negócios citados nos planos exibidos.
   const ids = lista.flatMap((p) => Object.keys(p.items));
@@ -77,7 +92,7 @@ export default async function Aprovacoes({ searchParams }) {
           <Link href="/aprovacoes" className="on">Aprovações{pendentes.length ? ` (${pendentes.length})` : ""}</Link>
         </div>
         <div className="seg-toggle">
-          {[["pendentes", "Aguardando"], ["decididos", "Decididos"], ["todos", "Todos"]].map(([v, l]) => (
+          {[["pendentes", "Aguardando"], ["decididos", "Decididos"], ["todos", "Todos"], ["historico", "Histórico"]].map(([v, l]) => (
             <Link key={v} href={`/aprovacoes?st=${v}`} className={filtro === v ? "on" : ""}>{l}</Link>
           ))}
         </div>
@@ -85,7 +100,32 @@ export default async function Aprovacoes({ searchParams }) {
 
       {!dbReady() && <div className="card"><div className="cal-empty">Banco não configurado.</div></div>}
 
-      {dbReady() && lista.length === 0 && (
+      {isHistorico && (
+        Object.keys(porSemana).length === 0 ? (
+          <div className="card"><div className="cal-empty">Ainda não há semanas anteriores registradas.</div></div>
+        ) : (
+          <div className="aprov-list">
+            {Object.entries(porSemana).map(([sem, planos]) => (
+              <div className="hist-bloco" key={sem}>
+                <div className="hist-semana">Semana {sem.replace("-W", " · semana ")}</div>
+                <div className="hist-linhas">
+                  {planos.map((p) => (
+                    <div className={"hist-linha st-" + p.status} key={p.ownerId + sem}>
+                      <span className="hist-nome">{p.nome}</span>
+                      <span className="hist-n">{p.negocios} negócio{p.negocios === 1 ? "" : "s"}</span>
+                      <span className="plan-badge">{p.status === "aprovado" ? "Aprovado" : p.status === "reprovado" ? "Reprovado" : p.status === "enviado" ? "Não decidido" : "Rascunho"}</span>
+                      {p.revisadoPor && <span className="hist-por">por {p.revisadoPor}</span>}
+                      {p.motivo && <span className="hist-motivo">{p.motivo}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {!isHistorico && dbReady() && lista.length === 0 && (
         <div className="card">
           <div className="cal-empty">
             <p style={{ margin: "0 0 18px" }}>

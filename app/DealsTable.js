@@ -22,8 +22,6 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
   // Plano da semana: { [dealId]: dia|null }. Ausente = fora do plano.
   const [items, setItems] = useState(() => ({ ...(plan?.items || {}) }));
   const [status, setStatus] = useState(plan?.status || "rascunho");
-  const [motivo, setMotivo] = useState(plan?.motivo || "");
-  const [showReprova, setShowReprova] = useState(false);
   const [planMsg, setPlanMsg] = useState(null);
   const [planBusy, setPlanBusy] = useState(false);
 
@@ -37,8 +35,10 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
     [rows]
   );
   const planCount = Object.keys(items).length;
-  const canPlan = planCtx?.ownerId && planCtx?.dbReady;
-  const locked = status === "aprovado" && !planCtx?.isAdmin;
+  // Plano aprovado sai do caminho: nada de editar nem de checkbox na tabela.
+  const aprovado = status === "aprovado";
+  const canPlan = planCtx?.ownerId && planCtx?.dbReady && !aprovado;
+  const locked = false;
 
   function edit(id, patch) {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -103,43 +103,24 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
     }
   }
 
-  async function revisar(novoStatus) {
-    if (novoStatus === "reprovado" && !motivo.trim()) {
-      setPlanMsg({ ok: false, text: "Escreva o motivo da reprovação." });
-      return;
-    }
-    setPlanBusy(true);
-    setPlanMsg(null);
-    try {
-      // Guarda eventuais ajustes do supervisor antes de decidir.
-      await fetch("/api/plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: planCtx.ownerId, week: planCtx.week, items }),
-      });
-      const res = await fetch("/api/plan", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ownerId: planCtx.ownerId,
-          week: planCtx.week,
-          status: novoStatus,
-          motivo,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      setStatus(novoStatus);
-      setShowReprova(false);
-      setPlanMsg({ ok: true, text: novoStatus === "aprovado" ? "Plano aprovado ✓" : "Plano reprovado ✓" });
-    } catch {
-      setPlanMsg({ ok: false, text: "Erro ao registrar a decisão." });
-    } finally {
-      setPlanBusy(false);
-    }
-  }
 
   return (
     <div className="card">
+      {aprovado && planCtx?.ownerId && (
+        <div className="planbar st-aprovado">
+          <div className="planbar-info">
+            <span className="plan-badge">Plano aprovado</span>
+            <span className="plan-week">Semana {planCtx.weekLabel}</span>
+            <span className="plan-count">
+              <b>{planCount}</b> negócio{planCount === 1 ? "" : "s"} combinados
+            </span>
+          </div>
+          <div className="planbar-actions">
+            <a className="btn-ghost" href="?view=agenda">Ver agenda da semana</a>
+          </div>
+        </div>
+      )}
+
       {canPlan && (
         <div className={"planbar st-" + status}>
           <div className="planbar-info">
@@ -154,34 +135,10 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
           </div>
           <div className="planbar-actions">
             {planMsg && <span className={planMsg.ok ? "saved" : "err"}>{planMsg.text}</span>}
-            {planCtx.isAdmin ? (
-              <>
-                <button className="btn-ghost" onClick={() => setShowReprova((v) => !v)} disabled={planBusy}>
-                  Reprovar
-                </button>
-                <button className="btn-primary" onClick={() => revisar("aprovado")} disabled={planBusy}>
-                  {planBusy ? "…" : "Aprovar plano"}
-                </button>
-              </>
-            ) : (
-              <button className="btn-primary" onClick={enviarPlano} disabled={planBusy || locked}>
-                {planBusy ? "Enviando…" : status === "rascunho" ? "Enviar plano da semana" : "Reenviar plano"}
-              </button>
-            )}
+            <button className="btn-primary" onClick={enviarPlano} disabled={planBusy || planCount === 0}>
+              {planBusy ? "Enviando…" : status === "rascunho" ? "Enviar plano da semana" : "Reenviar plano"}
+            </button>
           </div>
-          {showReprova && planCtx.isAdmin && (
-            <div className="reprova">
-              <input
-                className="reprova-input"
-                placeholder="Motivo da reprovação…"
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-              />
-              <button className="btn-danger" onClick={() => revisar("reprovado")} disabled={planBusy}>
-                Confirmar reprovação
-              </button>
-            </div>
-          )}
         </div>
       )}
 
