@@ -8,7 +8,9 @@ import {
 } from "../lib/hubspot";
 import { AVATARS, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES } from "../lib/config";
 import DealsTable from "./DealsTable";
+import CalendarView from "./CalendarView";
 import AdminBar from "./AdminBar";
+import Link from "next/link";
 import { getPlan, dbReady } from "../lib/db";
 import { weekKey, weekLabel } from "../lib/week";
 
@@ -101,6 +103,16 @@ export default async function Page({ searchParams }) {
 
   const week = weekKey();
   const plan = viewOwner ? await getPlan(viewOwner.ownerId, week) : null;
+  const isAgenda = searchParams?.view === "agenda";
+
+  // Mantém closer/segmento ao alternar a visualização.
+  const qs = (patch) => {
+    const p = new URLSearchParams();
+    if (searchParams?.closer) p.set("closer", searchParams.closer);
+    p.set("seg", seg);
+    for (const [k, v] of Object.entries(patch)) v ? p.set(k, v) : p.delete(k);
+    return "/?" + p.toString();
+  };
 
   const rows = deals.map((d) => ({
     ...d,
@@ -150,6 +162,23 @@ export default async function Page({ searchParams }) {
         <div className="kpi"><div className="lab">Valor no funil</div><div className="val">{brl(valor)}</div><div className="sub">soma dos negócios abertos</div></div>
       </div>
 
+      {viewOwner && (
+        <div className="viewbar">
+          <div className="viewtoggle">
+            <Link href={qs({ view: "" })} className={isAgenda ? "" : "on"}>Tabela</Link>
+            <Link href={qs({ view: "agenda" })} className={isAgenda ? "on" : ""}>Agenda da semana</Link>
+          </div>
+          {isAgenda && <span className="viewbar-week">Semana {weekLabel()}</span>}
+        </div>
+      )}
+
+      {isAgenda ? (
+        <CalendarView
+          rows={rows}
+          items={plan?.items || {}}
+          emptyLabel="Nenhum negócio marcado no plano desta semana."
+        />
+      ) : (
       <DealsTable
         key={`${searchParams?.closer || "me"}-${seg || "all"}`}
         deals={rows}
@@ -165,6 +194,7 @@ export default async function Page({ searchParams }) {
           dbReady: dbReady(),
         }}
       />
+      )}
     </div>
   );
 }

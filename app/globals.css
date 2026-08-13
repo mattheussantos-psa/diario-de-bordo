@@ -148,6 +148,48 @@ tbody tr:hover { background: var(--surface-2); }
 tbody tr.in-plan { background: #f5f9ff; }
 tbody tr.in-plan:hover { background: #eef4fe; }
 
+/* Alternador de visualização */
+.viewbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.viewtoggle { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
+.viewtoggle a { text-decoration: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 8px 18px; border-radius: 999px; transition: .15s; }
+.viewtoggle a:hover { color: var(--ink); }
+.viewtoggle a.on { background: var(--bg); color: var(--azul); box-shadow: var(--shadow); }
+.viewbar-week { color: var(--muted); font-size: 13px; font-weight: 600; }
+
+/* Agenda da semana */
+.cal-grid { display: grid; grid-template-columns: repeat(5, 1fr); }
+.cal-col { border-right: 1px solid var(--line); min-height: 380px; display: flex; flex-direction: column; }
+.cal-col:last-child { border-right: 0; }
+.cal-col.hoje { background: #f7faff; }
+.cal-head { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 12px 8px;
+  border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.cal-col.hoje .cal-head { background: var(--azul-soft); }
+.cal-dow { font-size: 11px; font-weight: 700; letter-spacing: .6px; color: var(--muted); }
+.cal-day { font-family: "Bruta Pro"; font-size: 22px; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cal-day.badge { background: var(--azul); color: #fff; border-radius: 999px; min-width: 34px; text-align: center; padding: 2px 0; }
+.cal-body { display: flex; flex-direction: column; gap: 8px; padding: 12px 10px; }
+.cal-vazio { color: var(--line); text-align: center; font-size: 18px; padding-top: 8px; }
+.cal-card { display: flex; flex-direction: column; gap: 3px; text-decoration: none; background: var(--bg);
+  border: 1px solid var(--line); border-left: 3px solid var(--azul); border-radius: 9px; padding: 9px 11px;
+  transition: .15s; }
+.cal-card:hover { border-color: #d3d7de; border-left-color: var(--azul); box-shadow: var(--shadow); transform: translateY(-1px); }
+.cal-dot { display: none; }
+.cal-nome { font-size: 12.5px; font-weight: 600; color: var(--ink); line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.cal-meta { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; gap: 7px; align-items: center; }
+.cal-late { color: var(--laranja); font-weight: 700; }
+/* Cor da borda por temperatura */
+.cal-card:has(.v-fc) { border-left-color: var(--azul); }
+.cal-card:has(.v-vv) { border-left-color: var(--laranja); }
+.cal-card:has(.v-lm) { border-left-color: var(--muted); }
+.cal-card:has(.v-cl) { border-left-color: #c98a4b; }
+.cal-card:has(.v-none) { border-left-color: var(--line); }
+.cal-semdia { border-top: 1px solid var(--line); padding: 14px 18px; }
+.cal-semdia-lab { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.cal-semdia-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.cal-empty { padding: 60px 20px; text-align: center; color: var(--muted); font-size: 14px; }
+@media (max-width: 900px) { .cal-grid { grid-template-columns: 1fr; } .cal-col { min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); } }
+
 .empty { max-width: 560px; margin: 80px auto; text-align: center; color: var(--muted); }
 .empty h2 { font-family: "Bruta Pro"; color: var(--ink); font-size: 26px; text-transform: uppercase; }
 
