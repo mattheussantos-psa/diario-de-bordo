@@ -1,28 +1,28 @@
-// Checagem do INSERT em lote do plano: node test-plan-insert.mjs
+// Checagem da gravação do plano: node test-plan-insert.mjs
 import assert from "node:assert/strict";
-import { buildItemsInsert } from "./lib/plan-insert.js";
+import { neon } from "@neondatabase/serverless";
+import { buildItemArrays } from "./lib/plan-insert.js";
 
-// Sem itens: nada a inserir.
-assert.equal(buildItemsInsert("80454586", "2026-W33", {}), null);
+// --- arrays enviados ao unnest ---
+assert.deepEqual(buildItemArrays({}), { dealIds: [], dias: [] });
 
-// Um item com dia definido.
-const um = buildItemsInsert("80454586", "2026-W33", { "62615940256": 3 });
-assert.equal(um.text, "INSERT INTO plan_items (owner_id, week, deal_id, dia) VALUES ($1, $2, $3, $4)");
-assert.deepEqual(um.params, ["80454586", "2026-W33", "62615940256", 3]);
+const um = buildItemArrays({ "62615940256": 3 });
+assert.deepEqual(um, { dealIds: ["62615940256"], dias: [3] });
 
-// Vários itens: placeholders não podem se repetir nem pular número.
-const tres = buildItemsInsert("1", "2026-W33", { a: 1, b: null, c: 5 });
-assert.equal(
-  tres.text,
-  "INSERT INTO plan_items (owner_id, week, deal_id, dia) VALUES ($1, $2, $3, $4),($1, $2, $5, $6),($1, $2, $7, $8)"
-);
-assert.deepEqual(tres.params, ["1", "2026-W33", "a", 1, "b", null, "c", 5]);
+// Ordem preservada e mesmo comprimento — unnest pareia por posição.
+const tres = buildItemArrays({ a: 1, b: null, c: 5 });
+assert.deepEqual(tres.dealIds, ["a", "b", "c"]);
+assert.deepEqual(tres.dias, [1, null, 5]);
+assert.equal(tres.dealIds.length, tres.dias.length);
 
-// Todo placeholder do texto precisa existir em params.
-const maior = Math.max(...[...tres.text.matchAll(/\$(\d+)/g)].map((m) => Number(m[1])));
-assert.equal(maior, tres.params.length, "placeholder sem parâmetro correspondente");
+// Negócio sem dia vira NULL, não undefined (o driver rejeitaria).
+assert.equal(buildItemArrays({ x: undefined }).dias[0], null);
 
-// Negócio sem dia escolhido vira NULL, não undefined (o driver rejeitaria).
-assert.equal(buildItemsInsert("1", "w", { x: undefined }).params[3], null);
+// --- a API do driver que realmente usamos existe ---
+// Este check é o que faltava: sql.query() NÃO existe nesta versão do driver,
+// e a gravação quebrava em produção com "is not a function".
+const sql = neon("postgresql://u:p@ep-x-pooler.us-east-1.aws.neon.tech/db?sslmode=require");
+assert.equal(typeof sql, "function", "template tag do neon indisponível");
+assert.equal(typeof sql.transaction, "function", "sql.transaction indisponível");
 
-console.log("ok: buildItemsInsert");
+console.log("ok: buildItemArrays + API do driver");

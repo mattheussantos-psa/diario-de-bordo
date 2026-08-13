@@ -24,7 +24,12 @@ export async function POST(req) {
   // Closer envia para aprovação; admin editando mantém como enviado.
   const status = body.status === "rascunho" ? "rascunho" : "enviado";
 
-  await savePlan(ownerId, week, items, status);
+  try {
+    await savePlan(ownerId, week, items, status);
+  } catch (e) {
+    console.error("[plano] falha ao salvar:", e);
+    return Response.json({ error: "Falha ao salvar o plano." }, { status: 500 });
+  }
   return Response.json({ ok: true, status });
 }
 
