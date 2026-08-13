@@ -6,7 +6,7 @@ import {
   getOpenDeals,
   getTemperaturaOptions,
 } from "../lib/hubspot";
-import { CLOSER_PIPELINES, AVATARS, dealUrl } from "../lib/config";
+import { CLOSER_PIPELINES, AVATARS, dealUrl, CLOSERS_BY_SEG } from "../lib/config";
 import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
 
@@ -61,10 +61,18 @@ export default async function Page({ searchParams }) {
 
   if (isAdmin) {
     owners = await getAllOwners();
+    // Com um segmento selecionado, lista só os closers daquele time.
+    const allowed = CLOSERS_BY_SEG[seg];
+    if (allowed) {
+      owners = allowed
+        .map((id) => owners.find((o) => String(o.ownerId) === id))
+        .filter(Boolean);
+    }
     const selId = searchParams?.closer || "";
-    if (selId) {
-      viewOwner = owners.find((o) => String(o.ownerId) === String(selId)) || null;
-      if (viewOwner) deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
+    // Seleção que não pertence ao segmento é descartada.
+    if (selId && owners.some((o) => String(o.ownerId) === String(selId))) {
+      viewOwner = owners.find((o) => String(o.ownerId) === String(selId));
+      deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
     }
   } else {
     viewOwner = await getOwnerByEmail(email);
@@ -115,7 +123,7 @@ export default async function Page({ searchParams }) {
       </div>
 
       {isAdmin ? (
-        <AdminBar owners={owners} selected={searchParams?.closer || ""} seg={seg} />
+        <AdminBar owners={owners} selected={viewOwner ? String(viewOwner.ownerId) : ""} seg={seg} />
       ) : (
         <div className="bar">
           <div className="ctx"><span className="ctx-dot" />Segmento: {segLabel}</div>
