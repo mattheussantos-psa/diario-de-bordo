@@ -47,6 +47,10 @@ body {
 .seg-toggle { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
 .seg-toggle button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 999px; cursor: pointer; transition: .15s; }
 .seg-toggle button.on { background: var(--bg); color: var(--azul); box-shadow: var(--shadow); }
+.btn-seed { background: transparent; color: var(--muted); border: 1px dashed var(--line); font: inherit;
+  font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer; transition: .15s; }
+.btn-seed:hover:not(:disabled) { color: var(--ink); border-color: var(--muted); }
+.btn-seed:disabled { opacity: .5; cursor: default; }
 
 .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
 .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
