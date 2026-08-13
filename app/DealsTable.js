@@ -189,12 +189,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
         <table>
           <thead>
             <tr>
-              {canPlan && <th style={{ width: "17%" }}>Plano da semana</th>}
+              {canPlan && <th style={{ width: "15%" }}>Plano da semana</th>}
               <th style={{ width: "19%" }}>Nome do negócio</th>
-              <th style={{ width: "13%" }}>Etapa atual</th>
-              <th style={{ width: "15%" }}>Próxima atividade</th>
-              <th style={{ width: "18%" }}>Evolução buscada</th>
-              <th style={{ width: "18%" }}>Observação</th>
+              <th style={{ width: "14%" }}>Etapa atual</th>
+              <th style={{ width: "14%" }}>Próxima atividade</th>
+              <th style={{ width: "17%" }}>Evolução buscada</th>
+              <th style={{ width: "21%" }}>Observação</th>
             </tr>
           </thead>
           <tbody>
