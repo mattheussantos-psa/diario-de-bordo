@@ -6,13 +6,20 @@ import {
   getOpenDeals,
   getTemperaturaOptions,
 } from "../lib/hubspot";
-import { CLOSER_PIPELINES, AVATARS, dealUrl, CLOSERS_BY_SEG } from "../lib/config";
+import { AVATARS, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES } from "../lib/config";
 import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
 import { getPlan, dbReady } from "../lib/db";
 import { weekKey, weekLabel } from "../lib/week";
 
 export const dynamic = "force-dynamic";
+
+// Segmento a que o closer pertence (B2B/B2C), pelo cadastro dos times.
+function segOf(ownerId) {
+  return Object.keys(CLOSERS_BY_SEG).find((s) =>
+    CLOSERS_BY_SEG[s].includes(String(ownerId))
+  );
+}
 
 function pipelinesForSeg(seg) {
   if (seg === "B2B") return ["default"];
@@ -53,7 +60,8 @@ export default async function Page({ searchParams }) {
   const email = session.user.email.toLowerCase();
   const userName = session.user.name || email;
   const isAdmin = !!session.user.isAdmin;
-  const seg = searchParams?.seg || "";
+  // Sempre um segmento ativo: B2B é o padrão ao abrir o painel.
+  let seg = searchParams?.seg === "B2C" ? "B2C" : "B2B";
 
   let viewOwner = null;
   let owners = [];
@@ -86,6 +94,8 @@ export default async function Page({ searchParams }) {
         </div>
       );
     }
+    // O segmento do closer vem do time dele, não da URL.
+    seg = segOf(viewOwner.ownerId) || seg;
     deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
   }
 
@@ -100,8 +110,6 @@ export default async function Page({ searchParams }) {
     url: dealUrl(d.id),
   }));
 
-  const segs = [...new Set(rows.map((d) => CLOSER_PIPELINES[d.pipeline]).filter(Boolean))];
-  const segLabel = seg || (segs.length ? segs.join(" + ") : "—");
   const hoje = rows.filter((d) => d.next.pill?.cls === "today").length;
   const atrasadas = rows.filter((d) => d.next.pill?.cls === "late").length;
   const valor = rows.reduce((s, d) => s + (d.amount || 0), 0);
@@ -131,12 +139,12 @@ export default async function Page({ searchParams }) {
         <AdminBar owners={owners} selected={viewOwner ? String(viewOwner.ownerId) : ""} seg={seg} />
       ) : (
         <div className="bar">
-          <div className="ctx"><span className="ctx-dot" />Segmento: {segLabel}</div>
+          <div className="ctx"><span className="ctx-dot" />Segmento: {seg}</div>
         </div>
       )}
 
       <div className="kpis">
-        <div className="kpi"><div className="lab">Negócios ativos</div><div className="val">{rows.length}</div><div className="sub">{viewOwner ? `funil ${seg || "B2B + B2C"}` : "selecione um closer"}</div></div>
+        <div className="kpi"><div className="lab">Negócios ativos</div><div className="val">{rows.length}</div><div className="sub">{viewOwner ? `funil ${seg}` : "selecione um closer"}</div></div>
         <div className="kpi"><div className="lab">Atividades próximas</div><div className="val a">{hoje}</div><div className="sub">hoje ou nos próximos 3 dias</div></div>
         <div className="kpi"><div className="lab">Atrasadas</div><div className="val o">{atrasadas}</div><div className="sub">próxima atividade vencida</div></div>
         <div className="kpi"><div className="lab">Valor no funil</div><div className="val">{brl(valor)}</div><div className="sub">soma dos negócios abertos</div></div>

@@ -34,17 +34,13 @@ export default function AdminBar({ owners, selected, seg }) {
           </select>
         </div>
         <div className="seg-toggle">
-          {[
-            ["", "Todos"],
-            ["B2B", "B2B"],
-            ["B2C", "B2C"],
-          ].map(([val, label]) => (
+          {["B2B", "B2C"].map((val) => (
             <button
-              key={label}
-              className={(seg || "") === val ? "on" : ""}
+              key={val}
+              className={seg === val ? "on" : ""}
               onClick={() => nav({ seg: val })}
             >
-              {label}
+              {val}
             </button>
           ))}
         </div>
