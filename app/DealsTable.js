@@ -86,6 +86,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel }) {
                         <span className={"pill-date " + r.next.pill.cls}>{r.next.pill.text}</span>
                       )}
                     </span>
+                    {r.nextStep && <span className="activity">{r.nextStep}</span>}
                   </div>
                 </td>
                 <td>
