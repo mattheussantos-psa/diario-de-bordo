@@ -21,8 +21,12 @@ export async function POST(req) {
 
   const week = body.week || weekKey();
   const items = body.items && typeof body.items === "object" ? body.items : {};
-  // Closer envia para aprovação; admin editando mantém como enviado.
-  const status = body.status === "rascunho" ? "rascunho" : "enviado";
+  // Closer envia para aprovação; admin ajustando os itens preserva o status (null).
+  const status = body.manterStatus && session.user.isAdmin
+    ? null
+    : body.status === "rascunho"
+    ? "rascunho"
+    : "enviado";
 
   try {
     await savePlan(ownerId, week, items, status);
