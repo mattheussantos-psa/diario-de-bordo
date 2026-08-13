@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
-import { getAllOwners, getDealsByIds } from "../../lib/hubspot";
+import { getDealsByIds } from "../../lib/hubspot";
 import { getWeekPlans, dbReady } from "../../lib/db";
 import { weekKey, weekLabel, mondayOf, DIAS } from "../../lib/week";
-import { CLOSERS_BY_SEG, AVATARS, TEMP_STYLE, dealUrl } from "../../lib/config";
+import { CLOSERS_BY_SEG, AVATARS, TEMP_STYLE, dealUrl, NOME_CLOSER } from "../../lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +25,8 @@ export default async function AgendaGeral({ searchParams }) {
   const week = weekKey();
   const seg = searchParams?.seg === "B2C" ? "B2C" : "B2B";
 
-  const [owners, plans] = await Promise.all([getAllOwners(), getWeekPlans(week)]);
-  const nomeDe = {};
-  for (const o of owners) nomeDe[String(o.ownerId)] = o.name;
+  const plans = await getWeekPlans(week);
+  const nomeDe = NOME_CLOSER;
 
   // Só os closers do segmento escolhido, na ordem cadastrada.
   const doSeg = CLOSERS_BY_SEG[seg];

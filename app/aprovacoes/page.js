@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
-import { getAllOwners, getDealsByIds } from "../../lib/hubspot";
+import { getDealsByIds } from "../../lib/hubspot";
 import { getWeekPlans, getPlansHistory, dbReady } from "../../lib/db";
 import { weekKey, weekLabel } from "../../lib/week";
-import { CLOSERS_BY_SEG, AVATARS } from "../../lib/config";
+import { CLOSERS_BY_SEG, AVATARS, NOME_CLOSER, SEG_CLOSER } from "../../lib/config";
 import { seedWeek } from "../../lib/seed";
 import ApprovalCard from "../ApprovalCard";
 
@@ -30,14 +30,11 @@ export default async function Aprovacoes({ searchParams }) {
     redirect("/aprovacoes");
   }
 
-  const [owners, plans] = await Promise.all([getAllOwners(), getWeekPlans(week)]);
+  const plans = await getWeekPlans(week);
 
-  // Só closers cadastrados nos times B2B/B2C.
-  const segOf = (id) =>
-    Object.keys(CLOSERS_BY_SEG).find((s) => CLOSERS_BY_SEG[s].includes(String(id)));
-
-  const nomeDe = {};
-  for (const o of owners) nomeDe[String(o.ownerId)] = o.name;
+  // Times e nomes vêm da configuração local, sem consultar o HubSpot.
+  const segOf = (id) => SEG_CLOSER[String(id)];
+  const nomeDe = NOME_CLOSER;
 
   const todos = plans
     .filter((p) => segOf(p.ownerId))

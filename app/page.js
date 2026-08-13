@@ -2,11 +2,10 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "../auth";
 import {
   getOwnerByEmail,
-  getAllOwners,
   getOpenDeals,
   getTemperaturaOptions,
 } from "../lib/hubspot";
-import { AVATARS, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES } from "../lib/config";
+import { AVATARS, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES, CLOSERS, SEG_CLOSER } from "../lib/config";
 import DealsTable from "./DealsTable";
 import CalendarView from "./CalendarView";
 import AdminBar from "./AdminBar";
@@ -18,9 +17,7 @@ export const dynamic = "force-dynamic";
 
 // Segmento a que o closer pertence (B2B/B2C), pelo cadastro dos times.
 function segOf(ownerId) {
-  return Object.keys(CLOSERS_BY_SEG).find((s) =>
-    CLOSERS_BY_SEG[s].includes(String(ownerId))
-  );
+  return SEG_CLOSER[String(ownerId)];
 }
 
 function pipelinesForSeg(seg) {
@@ -56,6 +53,21 @@ function brl(n) {
   return "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 }
 
+// Aviso claro quando a API do HubSpot recusa (cota diária é o caso mais comum).
+function ErroHubspot({ erro }) {
+  const cota = /429|daily limit/i.test(String(erro?.message || ""));
+  return (
+    <div className="empty">
+      <h2>{cota ? "Limite diário do HubSpot atingido" : "HubSpot indisponível"}</h2>
+      <p>
+        {cota
+          ? "A conta atingiu o limite de chamadas à API do HubSpot por hoje. Os dados voltam assim que a cota renovar (no início do próximo dia)."
+          : "Não foi possível falar com o HubSpot agora. Tente novamente em alguns minutos."}
+      </p>
+    </div>
+  );
+}
+
 export default async function Page({ searchParams }) {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
@@ -69,25 +81,38 @@ export default async function Page({ searchParams }) {
   let owners = [];
   let deals = [];
 
-  const tempOptions = await getTemperaturaOptions();
+  // Falha do HubSpot (cota diária, indisponibilidade) vira aviso, não tela de erro.
+  let erroHubspot = null;
+  let tempOptions = [];
+  try {
+    tempOptions = await getTemperaturaOptions();
+  } catch (e) {
+    erroHubspot = e;
+  }
 
   if (isAdmin) {
-    owners = await getAllOwners();
-    // Com um segmento selecionado, lista só os closers daquele time.
-    const allowed = CLOSERS_BY_SEG[seg];
-    if (allowed) {
-      owners = allowed
-        .map((id) => owners.find((o) => String(o.ownerId) === id))
-        .filter(Boolean);
-    }
+    // Lista fixa dos closers do segmento (evita varrer os owners do HubSpot).
+    owners = CLOSERS[seg].map((c) => ({ ownerId: c.id, name: c.nome }));
     const selId = searchParams?.closer || "";
     // Seleção que não pertence ao segmento é descartada.
     if (selId && owners.some((o) => String(o.ownerId) === String(selId))) {
-      viewOwner = owners.find((o) => String(o.ownerId) === String(selId));
-      deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
+      const sel = owners.find((o) => String(o.ownerId) === String(selId));
+      viewOwner = { ownerId: sel.ownerId, name: sel.name };
+      try {
+        deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
+      } catch (e) {
+        erroHubspot = e;
+      }
     }
   } else {
-    viewOwner = await getOwnerByEmail(email);
+    try {
+      viewOwner = await getOwnerByEmail(email);
+    } catch (e) {
+      erroHubspot = e;
+    }
+    if (!viewOwner && erroHubspot) {
+      return <ErroHubspot erro={erroHubspot} />;
+    }
     if (!viewOwner) {
       return (
         <div className="empty">
@@ -98,8 +123,14 @@ export default async function Page({ searchParams }) {
     }
     // O segmento do closer vem do time dele, não da URL.
     seg = segOf(viewOwner.ownerId) || seg;
-    deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
+    try {
+      deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
+    } catch (e) {
+      erroHubspot = e;
+    }
   }
+
+  if (erroHubspot && deals.length === 0) return <ErroHubspot erro={erroHubspot} />;
 
   const week = weekKey();
   const plan = viewOwner ? await getPlan(viewOwner.ownerId, week) : null;
