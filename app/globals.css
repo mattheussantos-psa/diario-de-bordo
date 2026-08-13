@@ -104,6 +104,42 @@ tbody tr:hover { background: var(--surface-2); }
 .save { background: var(--ink); color: var(--bg); border: 0; font: inherit; font-weight: 600; font-size: 13px; padding: 9px 18px; border-radius: 10px; cursor: pointer; }
 .save:disabled { opacity: .45; cursor: default; }
 
+/* Plano da semana */
+.planbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 14px 18px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.planbar.st-enviado { background: var(--azul-soft); }
+.planbar.st-aprovado { background: #eaf7ee; }
+.planbar.st-reprovado { background: var(--laranja-soft); }
+.planbar-info { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.plan-badge { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+  padding: 5px 11px; border-radius: 999px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); }
+.st-enviado .plan-badge { background: var(--azul); color: #fff; border-color: transparent; }
+.st-aprovado .plan-badge { background: #17803d; color: #fff; border-color: transparent; }
+.st-reprovado .plan-badge { background: var(--laranja); color: #fff; border-color: transparent; }
+.plan-week { font-weight: 600; color: var(--ink); }
+.plan-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.plan-motivo { color: var(--laranja); font-weight: 600; }
+.planbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; }
+.btn-primary { background: var(--ink); color: #fff; border: 0; font: inherit; font-weight: 600; font-size: 13px;
+  padding: 9px 18px; border-radius: 10px; cursor: pointer; }
+.btn-primary:disabled { opacity: .45; cursor: default; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font: inherit;
+  font-weight: 600; font-size: 13px; padding: 9px 16px; border-radius: 10px; cursor: pointer; }
+.btn-ghost:hover { color: var(--ink); border-color: #d3d7de; }
+.btn-danger { background: var(--laranja); color: #fff; border: 0; font: inherit; font-weight: 600; font-size: 13px;
+  padding: 9px 16px; border-radius: 10px; cursor: pointer; }
+.reprova { display: flex; gap: 10px; width: 100%; margin-top: 4px; flex-wrap: wrap; }
+.reprova-input { flex: 1; min-width: 220px; font: inherit; font-size: 13px; padding: 9px 13px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); }
+.reprova-input:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px var(--azul-soft); }
+
+.plan-check { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.plan-check input { width: 16px; height: 16px; accent-color: var(--azul); cursor: pointer; }
+.dia-select { margin-top: 7px; font: inherit; font-size: 12px; font-weight: 600; padding: 5px 9px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); cursor: pointer; }
+tbody tr.in-plan { background: #f5f9ff; }
+tbody tr.in-plan:hover { background: #eef4fe; }
+
 .empty { max-width: 560px; margin: 80px auto; text-align: center; color: var(--muted); }
 .empty h2 { font-family: "Bruta Pro"; color: var(--ink); font-size: 26px; text-transform: uppercase; }
 

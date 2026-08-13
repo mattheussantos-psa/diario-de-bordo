@@ -9,6 +9,8 @@ import {
 import { CLOSER_PIPELINES, AVATARS, dealUrl, CLOSERS_BY_SEG } from "../lib/config";
 import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
+import { getPlan, dbReady } from "../lib/db";
+import { weekKey, weekLabel } from "../lib/week";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +89,9 @@ export default async function Page({ searchParams }) {
     deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
   }
 
+  const week = weekKey();
+  const plan = viewOwner ? await getPlan(viewOwner.ownerId, week) : null;
+
   const rows = deals.map((d) => ({
     ...d,
     next: nextActivity(d.nextActivity),
@@ -143,6 +148,14 @@ export default async function Page({ searchParams }) {
         options={tempOptions}
         closerName={viewOwner ? viewOwner.name : ""}
         emptyLabel={isAdmin && !viewOwner ? "Selecione um closer acima para ver o diário." : "Nenhum negócio ativo no funil."}
+        plan={plan}
+        planCtx={{
+          ownerId: viewOwner ? String(viewOwner.ownerId) : "",
+          week,
+          weekLabel: weekLabel(),
+          isAdmin,
+          dbReady: dbReady(),
+        }}
       />
     </div>
   );
