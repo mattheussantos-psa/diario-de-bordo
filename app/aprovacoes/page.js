@@ -61,7 +61,7 @@ export default async function Aprovacoes({ searchParams }) {
 
   // Um único batch para todos os negócios citados nos planos exibidos.
   const ids = lista.flatMap((p) => Object.keys(p.items));
-  const dealsById = ids.length ? await getDealsByIds(ids) : {};
+  const dealsById = ids.length ? await getDealsByIds(ids, { withTasks: true }) : {};
 
   return (
     <div className="wrap">

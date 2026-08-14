@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TEMP_STYLE, dealUrl } from "../lib/config";
 import { DIAS } from "../lib/week";
+import { formatNextActivity } from "../lib/activity";
 
 const STATUS_LABEL = {
   rascunho: "Rascunho",
@@ -257,6 +258,20 @@ export default function ApprovalCard({ plano, deals, week }) {
   );
 }
 
+// Data e descrição da próxima atividade do negócio.
+function Atividade({ n }) {
+  const at = formatNextActivity(n.nextActivity);
+  return (
+    <span className="aprov-item-ativ">
+      <span className={"aprov-ativ-data" + (at.none ? " none" : "")}>
+        {at.dateText}
+        {at.pill && <b className={"pill-date " + at.pill.cls}>{at.pill.text}</b>}
+      </span>
+      {n.nextStep && <span className="aprov-ativ-desc">{n.nextStep}</span>}
+    </span>
+  );
+}
+
 function NegocioItem({ n, dia, editando, onDia, onRemover }) {
   if (!editando) {
     return (
@@ -268,6 +283,7 @@ function NegocioItem({ n, dia, editando, onDia, onRemover }) {
       >
         <span className="aprov-item-nome">{n.name}</span>
         <span className="aprov-item-val">{brl(n.amount)}</span>
+        <Atividade n={n} />
       </a>
     );
   }

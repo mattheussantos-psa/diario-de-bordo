@@ -12,6 +12,7 @@ import AdminBar from "./AdminBar";
 import Link from "next/link";
 import { getPlan, getWeekPlans, dbReady } from "../lib/db";
 import { weekKey, weekLabel } from "../lib/week";
+import { formatNextActivity } from "../lib/activity";
 
 export const dynamic = "force-dynamic";
 
@@ -24,24 +25,6 @@ function pipelinesForSeg(seg) {
   if (seg === "B2B") return ["default"];
   if (seg === "B2C") return ["725182862"];
   return Object.keys(CLOSER_PIPELINES);
-}
-
-// Formata a próxima atividade em rótulo + urgência.
-function nextActivity(ts) {
-  if (!ts) return { dateText: "Sem atividade", none: true };
-  const d = /^\d+$/.test(String(ts)) ? new Date(Number(ts)) : new Date(ts);
-  if (isNaN(d)) return { dateText: "Sem atividade", none: true };
-  const dateText = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
-  const now = new Date();
-  const day = 86400000;
-  const diff = Math.round(
-    (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) -
-      Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / day
-  );
-  if (diff < 0) return { dateText, pill: { cls: "late", text: "atrasada" } };
-  if (diff === 0) return { dateText, pill: { cls: "today", text: "hoje" } };
-  if (diff <= 3) return { dateText, pill: { cls: "today", text: `em ${diff}d` } };
-  return { dateText };
 }
 
 function initials(name) {
@@ -150,7 +133,7 @@ export default async function Page({ searchParams }) {
 
   const rows = deals.map((d) => ({
     ...d,
-    next: nextActivity(d.nextActivity),
+    next: formatNextActivity(d.nextActivity),
     amountText: brl(d.amount),
     adv: /avanç/i.test(d.stageLabel),
     url: dealUrl(d.id),
