@@ -123,6 +123,7 @@ tbody tr:hover { background: var(--surface-2); }
 .plan-week { font-weight: 600; color: var(--ink); }
 .plan-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
 .plan-motivo { color: var(--laranja); font-weight: 600; }
+.plan-hint { color: var(--muted); font-size: 12px; font-style: italic; }
 .planbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; }
 .btn-primary { background: var(--ink); color: #fff; border: 0; font: inherit; font-weight: 600; font-size: 13px;
   padding: 9px 18px; border-radius: 10px; cursor: pointer; }

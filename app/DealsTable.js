@@ -47,9 +47,10 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
     [rows]
   );
   const planCount = Object.keys(items).length;
-  // Plano aprovado sai do caminho: nada de editar nem de checkbox na tabela.
   const aprovado = status === "aprovado";
-  const canPlan = planCtx?.ownerId && planCtx?.dbReady && !aprovado;
+  const isAdmin = !!planCtx?.isAdmin;
+  // Aprovado, o closer só acompanha; o admin continua podendo ajustar o plano.
+  const canPlan = planCtx?.ownerId && planCtx?.dbReady && (!aprovado || isAdmin);
   const locked = false;
 
   function edit(id, patch) {
@@ -103,11 +104,20 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
       const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: planCtx.ownerId, week: planCtx.week, items }),
+        body: JSON.stringify({
+          ownerId: planCtx.ownerId,
+          week: planCtx.week,
+          items,
+          // Admin ajustando o plano não muda a situação (aprovado segue aprovado).
+          manterStatus: isAdmin,
+        }),
       });
       if (!res.ok) throw new Error();
-      setStatus("enviado");
-      setPlanMsg({ ok: true, text: "Plano enviado para aprovação ✓" });
+      if (!isAdmin) setStatus("enviado");
+      setPlanMsg({
+        ok: true,
+        text: isAdmin ? "Plano atualizado ✓" : "Plano enviado para aprovação ✓",
+      });
     } catch {
       setPlanMsg({ ok: false, text: "Erro ao enviar o plano." });
     } finally {
@@ -118,7 +128,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
 
   return (
     <div className="card">
-      {aprovado && planCtx?.ownerId && (
+      {aprovado && !isAdmin && planCtx?.ownerId && (
         <div className="planbar st-aprovado">
           <div className="planbar-info">
             <span className="plan-badge">Plano aprovado</span>
@@ -141,14 +151,25 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
             <span className="plan-count">
               <b>{planCount}</b> negócio{planCount === 1 ? "" : "s"} no plano
             </span>
+            {isAdmin && <span className="plan-hint">Marque ou desmarque abaixo e salve</span>}
             {status === "reprovado" && plan?.motivo && (
               <span className="plan-motivo">Motivo: {plan.motivo}</span>
             )}
           </div>
           <div className="planbar-actions">
             {planMsg && <span className={planMsg.ok ? "saved" : "err"}>{planMsg.text}</span>}
-            <button className="btn-primary" onClick={enviarPlano} disabled={planBusy || planCount === 0}>
-              {planBusy ? "Enviando…" : status === "rascunho" ? "Enviar plano da semana" : "Reenviar plano"}
+            <button
+              className="btn-primary"
+              onClick={enviarPlano}
+              disabled={planBusy || (!isAdmin && planCount === 0)}
+            >
+              {planBusy
+                ? "Salvando…"
+                : isAdmin
+                ? "Salvar plano do closer"
+                : status === "rascunho"
+                ? "Enviar plano da semana"
+                : "Reenviar plano"}
             </button>
           </div>
         </div>
