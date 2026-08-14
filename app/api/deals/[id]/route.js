@@ -22,8 +22,9 @@ export async function PATCH(req, { params }) {
     }
   }
 
+  // Só a observação vai para o HubSpot. A evolução é intenção do briefing e
+  // não altera temperatura_atual — quem move a temperatura é o closer no CRM.
   const patch = {};
-  if (typeof body.temperatura_atual === "string") patch.temperatura_atual = body.temperatura_atual;
   if (typeof body.observacoes === "string") patch.observacoes = body.observacoes;
   if (Object.keys(patch).length === 0) {
     return Response.json({ error: "Nada para atualizar." }, { status: 400 });

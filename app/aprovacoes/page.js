@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
-import { getDealsByIds } from "../../lib/hubspot";
-import { getWeekPlans, getPlansHistory, dbReady } from "../../lib/db";
-import { weekKey, weekLabel } from "../../lib/week";
+import { getDealsByIds, getTemperaturaOptions } from "../../lib/hubspot";
+import { getDayBriefings, getBriefingHistory, dbReady } from "../../lib/db";
+import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, AVATARS, NOME_CLOSER, SEG_CLOSER } from "../../lib/config";
-import { seedWeek } from "../../lib/seed";
+import { seedDia } from "../../lib/seed";
 import ApprovalCard from "../ApprovalCard";
 
 export const dynamic = "force-dynamic";
@@ -21,16 +21,16 @@ export default async function Aprovacoes({ searchParams }) {
 
   const userName = session.user.name || session.user.email;
   const avatar = AVATARS[session.user.email.toLowerCase()];
-  const week = weekKey();
+  const dia = dayKey();
   const filtro = searchParams?.st || "pendentes";
 
   // Popula cronogramas de demonstração e volta para a lista.
   if (searchParams?.simular === "1") {
-    await seedWeek(week);
+    await seedDia(dia);
     redirect("/aprovacoes");
   }
 
-  const plans = await getWeekPlans(week);
+  const plans = await getDayBriefings(dia);
 
   // Times e nomes vêm da configuração local, sem consultar o HubSpot.
   const segOf = (id) => SEG_CLOSER[String(id)];
@@ -52,14 +52,15 @@ export default async function Aprovacoes({ searchParams }) {
     : pendentes;
 
   // Histórico: semanas anteriores, agrupadas.
-  const historico = isHistorico ? await getPlansHistory(week) : [];
+  const historico = isHistorico ? await getBriefingHistory(dia) : [];
   const porSemana = {};
   for (const h of historico) {
     if (!segOf(h.ownerId)) continue;
-    (porSemana[h.week] ||= []).push({ ...h, nome: nomeDe[h.ownerId] || `Closer ${h.ownerId}` });
+    (porSemana[h.dia] ||= []).push({ ...h, nome: nomeDe[h.ownerId] || `Closer ${h.ownerId}` });
   }
 
   // Um único batch para todos os negócios citados nos planos exibidos.
+  const tempOptions = await getTemperaturaOptions().catch(() => []);
   const ids = lista.flatMap((p) => Object.keys(p.items));
   const dealsById = ids.length ? await getDealsByIds(ids, { withTasks: true }) : {};
 
@@ -71,7 +72,7 @@ export default async function Aprovacoes({ searchParams }) {
           <div className="divider" />
           <div>
             <div className="title">Aprovações</div>
-            <div className="subtitle">Cronogramas da semana {weekLabel()} · {pendentes.length} aguardando</div>
+            <div className="subtitle">Briefings de {dayLabel(dia)} · {pendentes.length} aguardando</div>
           </div>
         </div>
         <div className="who">
@@ -100,12 +101,12 @@ export default async function Aprovacoes({ searchParams }) {
 
       {isHistorico && (
         Object.keys(porSemana).length === 0 ? (
-          <div className="card"><div className="cal-empty">Ainda não há semanas anteriores registradas.</div></div>
+          <div className="card"><div className="cal-empty">Ainda não há dias anteriores registrados.</div></div>
         ) : (
           <div className="aprov-list">
             {Object.entries(porSemana).map(([sem, planos]) => (
               <div className="hist-bloco" key={sem}>
-                <div className="hist-semana">Semana {sem.replace("-W", " · semana ")}</div>
+                <div className="hist-semana">{dayLabel(sem)}</div>
                 <div className="hist-linhas">
                   {planos.map((p) => (
                     <div className={"hist-linha st-" + p.status} key={p.ownerId + sem}>
@@ -128,12 +129,12 @@ export default async function Aprovacoes({ searchParams }) {
           <div className="cal-empty">
             <p style={{ margin: "0 0 18px" }}>
               {filtro === "pendentes"
-                ? "Nenhum cronograma aguardando aprovação nesta semana."
-                : "Nada por aqui nesta semana."}
+                ? "Nenhum briefing aguardando aprovação hoje."
+                : "Nada por aqui hoje."}
             </p>
             {todos.length === 0 && (
               <Link className="btn-primary" href="/aprovacoes?simular=1">
-                Simular cronogramas dos closers
+                Simular briefings dos closers
               </Link>
             )}
           </div>
@@ -142,7 +143,7 @@ export default async function Aprovacoes({ searchParams }) {
 
       <div className="aprov-list">
         {lista.map((p) => (
-          <ApprovalCard key={p.ownerId} plano={p} deals={dealsById} week={week} />
+          <ApprovalCard key={p.ownerId} plano={p} deals={dealsById} dia={dia} options={tempOptions} />
         ))}
       </div>
     </div>

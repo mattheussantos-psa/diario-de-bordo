@@ -1,13 +1,26 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
-import { savePlan, reviewPlan, dbReady } from "../../../lib/db";
-import { weekKey } from "../../../lib/week";
+import { saveBriefing, reviewBriefing, dbReady } from "../../../lib/db";
+import { dayKey } from "../../../lib/week";
 
-// Closer só mexe no próprio plano; admin mexe no de qualquer closer.
+// Closer só mexe no próprio briefing; admin mexe no de qualquer closer.
 async function resolveOwner(session, bodyOwnerId) {
   if (session.user.isAdmin && bodyOwnerId) return String(bodyOwnerId);
   const owner = await getOwnerByEmail(session.user.email.toLowerCase());
   return owner ? String(owner.ownerId) : null;
+}
+
+// Aceita { [dealId]: { de, para } } e descarta qualquer coisa fora do formato.
+function normalizar(items) {
+  const out = {};
+  if (!items || typeof items !== "object") return out;
+  for (const [id, v] of Object.entries(items)) {
+    out[String(id)] = {
+      de: typeof v?.de === "string" ? v.de : "",
+      para: typeof v?.para === "string" ? v.para : "",
+    };
+  }
+  return out;
 }
 
 export async function POST(req) {
@@ -19,22 +32,17 @@ export async function POST(req) {
   const ownerId = await resolveOwner(session, body.ownerId);
   if (!ownerId) return Response.json({ error: "Closer não encontrado." }, { status: 403 });
 
-  const week = body.week || weekKey();
-  const items = body.items && typeof body.items === "object" ? body.items : {};
-  // Closer envia para aprovação; admin ajustando os itens preserva o status (null).
-  const status = body.manterStatus && session.user.isAdmin
-    ? null
-    : body.status === "rascunho"
-    ? "rascunho"
-    : "enviado";
+  const dia = body.dia || dayKey();
+  // Admin ajustando preserva a situação; closer enviando manda para aprovação.
+  const status = body.manterStatus && session.user.isAdmin ? null : "enviado";
 
   try {
-    await savePlan(ownerId, week, items, status);
+    await saveBriefing(ownerId, dia, normalizar(body.items), status);
   } catch (e) {
-    console.error("[plano] falha ao salvar:", e);
-    return Response.json({ error: "Falha ao salvar o plano." }, { status: 500 });
+    console.error("[briefing] falha ao salvar:", e);
+    return Response.json({ error: "Falha ao salvar o briefing." }, { status: 500 });
   }
-  return Response.json({ ok: true, status });
+  return Response.json({ ok: true });
 }
 
 export async function PATCH(req) {
@@ -52,6 +60,6 @@ export async function PATCH(req) {
     return Response.json({ error: "Motivo é obrigatório ao reprovar." }, { status: 400 });
   }
 
-  await reviewPlan(String(ownerId), body.week || weekKey(), status, motivo, session.user.name || session.user.email);
+  await reviewBriefing(String(ownerId), body.dia || dayKey(), status, motivo, session.user.name || session.user.email);
   return Response.json({ ok: true });
 }

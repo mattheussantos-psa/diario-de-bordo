@@ -124,6 +124,37 @@ tbody tr:hover { background: var(--surface-2); }
 .plan-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
 .plan-motivo { color: var(--laranja); font-weight: 600; }
 .plan-hint { color: var(--muted); font-size: 12px; font-style: italic; }
+
+/* Evolução pretendida: de (temperatura de hoje) → para (intenção do dia) */
+.evo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.evo-seta { color: var(--muted); font-size: 14px; }
+.evo-vazio { color: var(--line); }
+.temp-atual, .temp-alvo { font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 8px;
+  background: var(--ink-soft); color: var(--muted); white-space: nowrap; }
+.temp-atual.t-fc, .temp-alvo.t-fc { background: var(--azul-soft); color: var(--azul); }
+.temp-atual.t-vv, .temp-alvo.t-vv { background: var(--laranja-soft); color: var(--laranja); }
+.temp-atual.t-cl, .temp-alvo.t-cl { background: #f4efe9; color: #a9702f; }
+.temp-atual.t-lm, .temp-alvo.t-lm { background: var(--ink-soft); color: var(--muted); }
+.temp-alvo { font-weight: 700; }
+.evo .act select { min-width: 150px; }
+
+/* Briefing no cartão de aprovação */
+.brief-lista { display: flex; flex-direction: column; gap: 10px; }
+.brief-item { background: var(--surface-2); border: 1px solid var(--line); border-left: 3px solid var(--line);
+  border-radius: 12px; padding: 12px 14px; }
+.brief-item.v-fc { border-left-color: var(--azul); }
+.brief-item.v-vv { border-left-color: var(--laranja); }
+.brief-item.v-cl { border-left-color: #c98a4b; }
+.brief-item.v-lm { border-left-color: var(--muted); }
+.brief-principal { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
+.brief-nome { font-size: 14px; font-weight: 600; color: var(--ink); text-decoration: none; }
+.brief-nome:hover { color: var(--azul); }
+.brief-val { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.brief-evo { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.brief-ativ { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.brief-ativ .aprov-ativ-desc { margin-top: 0; }
+.cal-evo { font-size: 10px; color: var(--muted); margin-top: 3px; display: block; }
+.cal-evo b { color: var(--ink); }
 .planbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; }
 .btn-primary { background: var(--ink); color: #fff; border: 0; font: inherit; font-weight: 600; font-size: 13px;
   padding: 9px 18px; border-radius: 10px; cursor: pointer; }

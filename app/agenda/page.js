@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { getDealsByIds } from "../../lib/hubspot";
-import { getWeekPlans, dbReady } from "../../lib/db";
-import { weekKey, weekLabel, mondayOf, DIAS } from "../../lib/week";
+import { getBriefingsForDays, dbReady } from "../../lib/db";
+import { weekLabel, weekDays, DIAS } from "../../lib/week";
 import { CLOSERS_BY_SEG, AVATARS, TEMP_STYLE, dealUrl, NOME_CLOSER } from "../../lib/config";
 
 export const dynamic = "force-dynamic";
@@ -22,37 +22,34 @@ export default async function AgendaGeral({ searchParams }) {
 
   const userName = session.user.name || session.user.email;
   const avatar = AVATARS[session.user.email.toLowerCase()];
-  const week = weekKey();
+  const dias = weekDays();
   const seg = searchParams?.seg === "B2C" ? "B2C" : "B2B";
 
-  const plans = await getWeekPlans(week);
+  const plans = await getBriefingsForDays(dias);
   const nomeDe = NOME_CLOSER;
 
   // Só os closers do segmento escolhido, na ordem cadastrada.
   const doSeg = CLOSERS_BY_SEG[seg];
-  const planos = plans
-    .filter((p) => doSeg.includes(String(p.ownerId)) && Object.keys(p.items).length)
-    .sort((a, b) => doSeg.indexOf(String(a.ownerId)) - doSeg.indexOf(String(b.ownerId)));
+  const planos = plans.filter(
+    (p) => doSeg.includes(String(p.ownerId)) && Object.keys(p.items).length
+  );
 
   const ids = planos.flatMap((p) => Object.keys(p.items));
   const dealsById = ids.length ? await getDealsByIds(ids) : {};
 
-  // Por dia: lista de {closer, negócio}
+  // Cada briefing já pertence a um dia; agrupa por data.
   const porDia = {};
-  for (const d of DIAS) porDia[d.v] = [];
-  const semDia = [];
+  for (const d of dias) porDia[d] = [];
   for (const p of planos) {
     const nome = nomeDe[p.ownerId] || `Closer ${p.ownerId}`;
-    for (const [dealId, dia] of Object.entries(p.items)) {
+    for (const [dealId, v] of Object.entries(p.items)) {
       const negocio = dealsById[dealId];
       if (!negocio) continue;
-      const reg = { closer: nome, status: p.status, ...negocio };
-      if (dia && porDia[dia]) porDia[dia].push(reg);
-      else semDia.push(reg);
+      (porDia[p.dia] ||= []).push({ closer: nome, status: p.status, evo: v, ...negocio });
     }
   }
 
-  const monday = mondayOf();
+
   const hojeStr = new Date().toDateString();
   const totalNeg = ids.length;
 
@@ -65,7 +62,7 @@ export default async function AgendaGeral({ searchParams }) {
           <div>
             <div className="title">Agenda geral</div>
             <div className="subtitle">
-              Semana {weekLabel()} · {planos.length} closer{planos.length === 1 ? "" : "s"} · {totalNeg} negócio{totalNeg === 1 ? "" : "s"}
+              Semana {weekLabel()} · {totalNeg} negócio{totalNeg === 1 ? "" : "s"} nos briefings
             </div>
           </div>
         </div>
@@ -94,19 +91,18 @@ export default async function AgendaGeral({ searchParams }) {
       {!dbReady() && <div className="card"><div className="cal-empty">Banco não configurado.</div></div>}
 
       {dbReady() && planos.length === 0 && (
-        <div className="card"><div className="cal-empty">Nenhum cronograma montado nesta semana no {seg}.</div></div>
+        <div className="card"><div className="cal-empty">Nenhum briefing registrado nesta semana no {seg}.</div></div>
       )}
 
       {planos.length > 0 && (
         <div className="card">
           <div className="cal-grid">
             {DIAS.map((d, i) => {
-              const data = new Date(monday);
-              data.setDate(data.getDate() + i);
+              const data = new Date(dias[i] + "T12:00:00");
               const isHoje = data.toDateString() === hojeStr;
-              const lista = porDia[d.v];
+              const lista = porDia[dias[i]] || [];
               return (
-                <div className={"cal-col" + (isHoje ? " hoje" : "")} key={d.v}>
+                <div className={"cal-col" + (isHoje ? " hoje" : "")} key={dias[i]}>
                   <div className="cal-head">
                     <span className="cal-dow">{DIA_LONGO[i]}</span>
                     <span className={"cal-day" + (isHoje ? " badge" : "")}>{data.getDate()}</span>
@@ -125,6 +121,9 @@ export default async function AgendaGeral({ searchParams }) {
                         <span className="cal-closer">{n.closer}</span>
                         <span className="cal-nome">{n.name}</span>
                         <span className="cal-meta">{brl(n.amount)}</span>
+                        {n.evo?.para && (
+                          <span className="cal-evo">{n.evo.de || "—"} → <b>{n.evo.para}</b></span>
+                        )}
                       </a>
                     ))}
                   </div>
@@ -133,21 +132,6 @@ export default async function AgendaGeral({ searchParams }) {
             })}
           </div>
 
-          {semDia.length > 0 && (
-            <div className="cal-semdia">
-              <div className="cal-semdia-lab">Sem dia definido ({semDia.length})</div>
-              <div className="cal-semdia-list">
-                {semDia.map((n, k) => (
-                  <a className={"cal-card v-" + (TEMP_STYLE[n.temperatura] || "none")}
-                     key={n.id + "-sd-" + k} href={dealUrl(n.id)} target="_blank" rel="noreferrer">
-                    <span className="cal-closer">{n.closer}</span>
-                    <span className="cal-nome">{n.name}</span>
-                    <span className="cal-meta">{brl(n.amount)}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

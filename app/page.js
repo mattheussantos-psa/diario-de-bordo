@@ -7,11 +7,10 @@ import {
 } from "../lib/hubspot";
 import { AVATARS, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES, CLOSERS, SEG_CLOSER } from "../lib/config";
 import DealsTable from "./DealsTable";
-import CalendarView from "./CalendarView";
 import AdminBar from "./AdminBar";
 import Link from "next/link";
-import { getPlan, getWeekPlans, dbReady } from "../lib/db";
-import { weekKey, weekLabel } from "../lib/week";
+import { getBriefing, getDayBriefings, dbReady } from "../lib/db";
+import { dayKey, dayLabel } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 
 export const dynamic = "force-dynamic";
@@ -115,21 +114,11 @@ export default async function Page({ searchParams }) {
 
   if (erroHubspot && deals.length === 0) return <ErroHubspot erro={erroHubspot} />;
 
-  const week = weekKey();
-  const plan = viewOwner ? await getPlan(viewOwner.ownerId, week) : null;
-  const isAgenda = searchParams?.view === "agenda";
+  const dia = dayKey();
+  const briefing = viewOwner ? await getBriefing(viewOwner.ownerId, dia) : null;
   const pendentes = isAdmin
-    ? (await getWeekPlans(week)).filter((p) => p.status === "enviado").length
+    ? (await getDayBriefings(dia)).filter((b) => b.status === "enviado").length
     : 0;
-
-  // Mantém closer/segmento ao alternar a visualização.
-  const qs = (patch) => {
-    const p = new URLSearchParams();
-    if (searchParams?.closer) p.set("closer", searchParams.closer);
-    p.set("seg", seg);
-    for (const [k, v] of Object.entries(patch)) v ? p.set(k, v) : p.delete(k);
-    return "/?" + p.toString();
-  };
 
   const rows = deals.map((d) => ({
     ...d,
@@ -190,39 +179,21 @@ export default async function Page({ searchParams }) {
         <div className="kpi"><div className="lab">Valor no funil</div><div className="val">{brl(valor)}</div><div className="sub">soma dos negócios abertos</div></div>
       </div>
 
-      {viewOwner && (
-        <div className="viewbar">
-          <div className="viewtoggle">
-            <Link href={qs({ view: "" })} className={isAgenda ? "" : "on"}>Tabela</Link>
-            <Link href={qs({ view: "agenda" })} className={isAgenda ? "on" : ""}>Agenda da semana</Link>
-          </div>
-          {isAgenda && <span className="viewbar-week">Semana {weekLabel()}</span>}
-        </div>
-      )}
+            <DealsTable
 
-      {isAgenda ? (
-        <CalendarView
-          rows={rows}
-          items={plan?.items || {}}
-          emptyLabel="Nenhum negócio marcado no plano desta semana."
-        />
-      ) : (
-      <DealsTable
-        key={`${searchParams?.closer || "me"}-${seg || "all"}`}
         deals={rows}
         options={tempOptions}
         closerName={viewOwner ? viewOwner.name : ""}
         emptyLabel={isAdmin && !viewOwner ? "Selecione um closer acima para ver o diário." : "Nenhum negócio ativo no funil."}
-        plan={plan}
-        planCtx={{
+        briefing={briefing}
+        ctx={{
           ownerId: viewOwner ? String(viewOwner.ownerId) : "",
-          week,
-          weekLabel: weekLabel(),
+          dia,
+          diaLabel: dayLabel(dia),
           isAdmin,
           dbReady: dbReady(),
         }}
       />
-      )}
     </div>
   );
 }

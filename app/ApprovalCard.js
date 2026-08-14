@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TEMP_STYLE, dealUrl } from "../lib/config";
-import { DIAS } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 
 const STATUS_LABEL = {
@@ -16,7 +15,7 @@ const STATUS_LABEL = {
 const brl = (n) =>
   n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 
-export default function ApprovalCard({ plano, deals, week }) {
+export default function ApprovalCard({ plano, deals, dia, options = [] }) {
   const router = useRouter();
   const [status, setStatus] = useState(plano.status);
   const [motivo, setMotivo] = useState(plano.motivo || "");
@@ -24,26 +23,19 @@ export default function ApprovalCard({ plano, deals, week }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
 
-  // Edição do gestor: incluir, retirar e trocar o dia dos negócios.
+  // Edição do gestor: incluir, retirar e trocar a evolução pretendida.
   const [editando, setEditando] = useState(false);
   const [rascunho, setRascunho] = useState({ ...plano.items });
   const [catalogo, setCatalogo] = useState(null);
-  const [addId, setAddId] = useState("");
 
   const itens = editando ? rascunho : plano.items;
   const entries = Object.entries(itens);
 
-  // Nome/valor vêm do lote já carregado ou do catálogo (negócios recém-incluídos).
   const info = (id) =>
     deals[id] || catalogo?.find((d) => String(d.id) === String(id)) || { id, name: `Negócio ${id}` };
 
   const total = entries.reduce((s, [id]) => s + (info(id).amount || 0), 0);
-
-  const porDia = DIAS.map((d) => ({
-    ...d,
-    negocios: entries.filter(([, dia]) => dia === d.v).map(([id]) => info(id)),
-  }));
-  const semDia = entries.filter(([, dia]) => !dia).map(([id]) => info(id));
+  const label = (v) => options.find((o) => o.value === v)?.label || v;
 
   async function abrirEdicao() {
     setEditando(true);
@@ -64,14 +56,14 @@ export default function ApprovalCard({ plano, deals, week }) {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/plan", {
+      const res = await fetch("/api/briefing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: plano.ownerId, week, items: rascunho, manterStatus: true }),
+        body: JSON.stringify({ ownerId: plano.ownerId, dia, items: rascunho, manterStatus: true }),
       });
       if (!res.ok) throw new Error();
       setEditando(false);
-      setMsg({ ok: true, text: "Plano atualizado ✓" });
+      setMsg({ ok: true, text: "Briefing atualizado ✓" });
       router.refresh();
     } catch {
       setMsg({ ok: false, text: "Erro ao salvar." });
@@ -88,10 +80,10 @@ export default function ApprovalCard({ plano, deals, week }) {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/plan", {
+      const res = await fetch("/api/briefing", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: plano.ownerId, week, status: novo, motivo }),
+        body: JSON.stringify({ ownerId: plano.ownerId, dia, status: novo, motivo }),
       });
       if (!res.ok) throw new Error();
       setStatus(novo);
@@ -116,63 +108,77 @@ export default function ApprovalCard({ plano, deals, week }) {
           <span className="plan-badge">{STATUS_LABEL[status]}</span>
         </div>
         <div className="aprov-resumo">
-          <span><b>{entries.length}</b> negócio{entries.length === 1 ? "" : "s"}</span>
-          <span><b>{brl(total)}</b> no plano</span>
+          <span><b>{entries.length}</b> negócio{entries.length === 1 ? "" : "s"} hoje</span>
+          <span><b>{brl(total)}</b> em jogo</span>
         </div>
       </div>
 
-      <div className="aprov-dias">
-        {porDia.map((d) => (
-          <div className="aprov-dia" key={d.v}>
-            <div className="aprov-dia-lab">{d.label}</div>
-            {d.negocios.length === 0 && <div className="aprov-vazio">—</div>}
-            {d.negocios.map((n) => (
-              <NegocioItem
-                key={n.id}
-                n={n}
-                dia={d.v}
-                editando={editando}
-                onDia={(dia) => setRascunho((r) => ({ ...r, [n.id]: dia }))}
-                onRemover={() =>
-                  setRascunho((r) => {
-                    const c = { ...r };
-                    delete c[n.id];
-                    return c;
-                  })
-                }
-              />
-            ))}
-          </div>
-        ))}
-      </div>
+      <div className="brief-lista">
+        {entries.length === 0 && <div className="aprov-vazio">Nenhum negócio no briefing.</div>}
+        {entries.map(([id, v]) => {
+          const n = info(id);
+          const at = formatNextActivity(n.nextActivity);
+          return (
+            <div className={"brief-item v-" + (TEMP_STYLE[v.de] || "none")} key={id}>
+              <div className="brief-principal">
+                <a className="brief-nome" href={dealUrl(id)} target="_blank" rel="noreferrer">
+                  {n.name}
+                </a>
+                <span className="brief-val">{brl(n.amount)}</span>
+              </div>
 
-      {semDia.length > 0 && (
-        <div className="aprov-semdia">
-          <span className="aprov-semdia-lab">Sem dia definido:</span>
-          {semDia.map((n) =>
-            editando ? (
-              <NegocioItem
-                key={n.id}
-                n={n}
-                dia={null}
-                editando
-                onDia={(dia) => setRascunho((r) => ({ ...r, [n.id]: dia }))}
-                onRemover={() =>
-                  setRascunho((r) => {
-                    const c = { ...r };
-                    delete c[n.id];
-                    return c;
-                  })
-                }
-              />
-            ) : (
-              <a className="aprov-chip" key={n.id} href={dealUrl(n.id)} target="_blank" rel="noreferrer">
-                {n.name}
-              </a>
-            )
-          )}
-        </div>
-      )}
+              <div className="brief-evo">
+                <span className={"temp-atual t-" + (TEMP_STYLE[v.de] || "none")}>
+                  {v.de ? label(v.de) : "sem temperatura"}
+                </span>
+                <span className="evo-seta">→</span>
+                {editando ? (
+                  <div className="act" data-v={TEMP_STYLE[v.para] || ""}>
+                    <select
+                      value={v.para || ""}
+                      onChange={(e) =>
+                        setRascunho((r) => ({ ...r, [id]: { ...r[id], para: e.target.value } }))
+                      }
+                    >
+                      <option value="">Levar para…</option>
+                      {options.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <span className={"temp-alvo t-" + (TEMP_STYLE[v.para] || "none")}>
+                    {v.para ? label(v.para) : "—"}
+                  </span>
+                )}
+                {editando && (
+                  <button
+                    className="aprov-x"
+                    onClick={() =>
+                      setRascunho((r) => {
+                        const c = { ...r };
+                        delete c[id];
+                        return c;
+                      })
+                    }
+                    title="Retirar do briefing"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              <div className="brief-ativ">
+                <span className={"aprov-ativ-data" + (at.none ? " none" : "")}>
+                  {at.dateText}
+                  {at.pill && <b className={"pill-date " + at.pill.cls}>{at.pill.text}</b>}
+                </span>
+                {n.nextStep && <span className="aprov-ativ-desc">{n.nextStep}</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {editando && (
         <div className="aprov-add">
@@ -184,18 +190,18 @@ export default function ApprovalCard({ plano, deals, week }) {
               <div className="select-wrap">
                 <select
                   className="closer-select"
-                  value={addId}
+                  value=""
                   onChange={(e) => {
                     const id = e.target.value;
-                    if (id) setRascunho((r) => ({ ...r, [id]: null }));
-                    setAddId("");
+                    if (id) {
+                      const d = catalogo.find((x) => String(x.id) === id);
+                      setRascunho((r) => ({ ...r, [id]: { de: d?.temperatura || "", para: "" } }));
+                    }
                   }}
                 >
                   <option value="">Selecione…</option>
                   {disponiveis.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
+                    <option key={d.id} value={d.id}>{d.name}</option>
                   ))}
                 </select>
               </div>
@@ -215,26 +221,16 @@ export default function ApprovalCard({ plano, deals, week }) {
         )}
         {editando ? (
           <>
-            <button className="btn-ghost" onClick={() => setEditando(false)} disabled={busy}>
-              Cancelar
-            </button>
+            <button className="btn-ghost" onClick={() => setEditando(false)} disabled={busy}>Cancelar</button>
             <button className="btn-primary" onClick={salvarEdicao} disabled={busy}>
               {busy ? "Salvando…" : "Salvar alterações"}
             </button>
           </>
         ) : (
           <>
-            <button className="btn-ghost" onClick={abrirEdicao} disabled={busy}>
-              Editar plano
-            </button>
-            <button className="btn-ghost" onClick={() => setAbrirReprova((v) => !v)} disabled={busy}>
-              Reprovar
-            </button>
-            <button
-              className="btn-primary"
-              onClick={() => decidir("aprovado")}
-              disabled={busy || status === "aprovado"}
-            >
+            <button className="btn-ghost" onClick={abrirEdicao} disabled={busy}>Editar briefing</button>
+            <button className="btn-ghost" onClick={() => setAbrirReprova((v) => !v)} disabled={busy}>Reprovar</button>
+            <button className="btn-primary" onClick={() => decidir("aprovado")} disabled={busy || status === "aprovado"}>
               {busy ? "…" : status === "aprovado" ? "Aprovado" : "Aprovar"}
             </button>
           </>
@@ -254,57 +250,6 @@ export default function ApprovalCard({ plano, deals, week }) {
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-// Data e descrição da próxima atividade do negócio.
-function Atividade({ n }) {
-  const at = formatNextActivity(n.nextActivity);
-  return (
-    <span className="aprov-item-ativ">
-      <span className={"aprov-ativ-data" + (at.none ? " none" : "")}>
-        {at.dateText}
-        {at.pill && <b className={"pill-date " + at.pill.cls}>{at.pill.text}</b>}
-      </span>
-      {n.nextStep && <span className="aprov-ativ-desc">{n.nextStep}</span>}
-    </span>
-  );
-}
-
-function NegocioItem({ n, dia, editando, onDia, onRemover }) {
-  if (!editando) {
-    return (
-      <a
-        className={"aprov-item v-" + (TEMP_STYLE[n.temperatura] || "none")}
-        href={dealUrl(n.id)}
-        target="_blank"
-        rel="noreferrer"
-      >
-        <span className="aprov-item-nome">{n.name}</span>
-        <span className="aprov-item-val">{brl(n.amount)}</span>
-        <Atividade n={n} />
-      </a>
-    );
-  }
-  return (
-    <div className={"aprov-item edit v-" + (TEMP_STYLE[n.temperatura] || "none")}>
-      <div className="aprov-item-top">
-        <span className="aprov-item-nome">{n.name}</span>
-        <button className="aprov-x" onClick={onRemover} title="Retirar do plano">×</button>
-      </div>
-      <div className="dias">
-        {DIAS.map((d) => (
-          <button
-            key={d.v}
-            type="button"
-            className={"dia" + (dia === d.v ? " on" : "")}
-            onClick={() => onDia(dia === d.v ? null : d.v)}
-          >
-            {d.label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

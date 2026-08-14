@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { TEMP_STYLE } from "../lib/config";
-import { DIAS } from "../lib/week";
 
 const STATUS_LABEL = {
   rascunho: "Rascunho",
@@ -11,69 +10,55 @@ const STATUS_LABEL = {
   reprovado: "Reprovado",
 };
 
-export default function DealsTable({ deals, options, closerName, emptyLabel, plan, planCtx }) {
-  const [rows, setRows] = useState(() =>
-    deals.map((d) => ({ ...d, _temp: d.temperatura, _obs: d.observacoes }))
-  );
+export default function DealsTable({ deals, options, closerName, emptyLabel, briefing, ctx }) {
+  const [rows, setRows] = useState(() => deals.map((d) => ({ ...d, _obs: d.observacoes })));
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState(null); // {ok:bool, text}
+  const [msg, setMsg] = useState(null);
   const [page, setPage] = useState(0);
 
-  // Plano da semana: { [dealId]: dia|null }. Ausente = fora do plano.
-  const [items, setItems] = useState(() => ({ ...(plan?.items || {}) }));
-  const [status, setStatus] = useState(plan?.status || "rascunho");
-  const [planMsg, setPlanMsg] = useState(null);
-  const [planBusy, setPlanBusy] = useState(false);
+  // Briefing do dia: { [dealId]: { de, para } }. Ausente = fora do briefing.
+  const [items, setItems] = useState(() => ({ ...(briefing?.items || {}) }));
+  const [status, setStatus] = useState(briefing?.status || "rascunho");
+  const [briefMsg, setBriefMsg] = useState(null);
+  const [briefBusy, setBriefBusy] = useState(false);
+
+  const aprovado = status === "aprovado";
+  const isAdmin = !!ctx?.isAdmin;
+  // Aprovado, o closer só acompanha; o admin continua ajustando.
+  const podeEditar = ctx?.ownerId && ctx?.dbReady && (!aprovado || isAdmin);
+  const total = Object.keys(items).length;
 
   const PAGE_SIZE = 10;
-  // Com o plano fechado, o que será trabalhado vem primeiro, na ordem dos dias.
-  // Em rascunho a ordem fica estável para as linhas não pularem ao marcar.
+  // Fechado o briefing, o que será trabalhado hoje vem primeiro.
   const ordered = useMemo(() => {
     if (status !== "aprovado") return rows;
     const dentro = (r) => r.id in items;
-    return [...rows].sort((a, b) => {
-      if (dentro(a) !== dentro(b)) return dentro(a) ? -1 : 1;
-      if (dentro(a)) return (items[a.id] ?? 9) - (items[b.id] ?? 9);
-      return 0;
-    });
+    return [...rows].sort((a, b) => (dentro(a) === dentro(b) ? 0 : dentro(a) ? -1 : 1));
   }, [rows, items, status]);
 
   const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, pageCount - 1);
   const visible = ordered.slice(pageSafe * PAGE_SIZE, pageSafe * PAGE_SIZE + PAGE_SIZE);
 
-  const dirty = useMemo(
-    () => rows.filter((r) => r._temp !== r.temperatura || r._obs !== r.observacoes),
-    [rows]
-  );
-  const planCount = Object.keys(items).length;
-  const aprovado = status === "aprovado";
-  const isAdmin = !!planCtx?.isAdmin;
-  // Aprovado, o closer só acompanha; o admin continua podendo ajustar o plano.
-  const canPlan = planCtx?.ownerId && planCtx?.dbReady && (!aprovado || isAdmin);
-  const locked = false;
+  const dirty = useMemo(() => rows.filter((r) => r._obs !== r.observacoes), [rows]);
 
-  function edit(id, patch) {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-    setMsg(null);
-  }
-
-  function togglePlan(id) {
+  function toggle(r) {
     setItems((it) => {
       const next = { ...it };
-      if (id in next) delete next[id];
-      else next[id] = null;
+      if (r.id in next) delete next[r.id];
+      // "de" congela a temperatura de hoje; "para" o closer escolhe.
+      else next[r.id] = { de: r.temperatura || "", para: "" };
       return next;
     });
-    setPlanMsg(null);
+    setBriefMsg(null);
   }
 
-  function setDia(id, dia) {
-    setItems((it) => ({ ...it, [id]: dia === "" ? null : Number(dia) }));
-    setPlanMsg(null);
+  function setPara(id, para) {
+    setItems((it) => ({ ...it, [id]: { ...it[id], para } }));
+    setBriefMsg(null);
   }
 
-  async function saveAll() {
+  async function salvarObs() {
     setSaving(true);
     setMsg(null);
     try {
@@ -82,14 +67,14 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
           fetch(`/api/deals/${r.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ temperatura_atual: r._temp, observacoes: r._obs }),
+            body: JSON.stringify({ observacoes: r._obs }),
           }).then((res) => {
             if (!res.ok) throw new Error();
           })
         )
       );
-      setRows((rs) => rs.map((r) => ({ ...r, temperatura: r._temp, observacoes: r._obs })));
-      setMsg({ ok: true, text: "Salvo no HubSpot ✓" });
+      setRows((rs) => rs.map((r) => ({ ...r, observacoes: r._obs })));
+      setMsg({ ok: true, text: "Observações salvas no HubSpot ✓" });
     } catch {
       setMsg({ ok: false, text: "Erro ao salvar. Tente de novo." });
     } finally {
@@ -97,79 +82,63 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
     }
   }
 
-  async function enviarPlano() {
-    setPlanBusy(true);
-    setPlanMsg(null);
+  async function enviarBriefing() {
+    setBriefBusy(true);
+    setBriefMsg(null);
     try {
-      const res = await fetch("/api/plan", {
+      const res = await fetch("/api/briefing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ownerId: planCtx.ownerId,
-          week: planCtx.week,
-          items,
-          // Admin ajustando o plano não muda a situação (aprovado segue aprovado).
-          manterStatus: isAdmin,
-        }),
+        body: JSON.stringify({ ownerId: ctx.ownerId, dia: ctx.dia, items, manterStatus: isAdmin }),
       });
       if (!res.ok) throw new Error();
       if (!isAdmin) setStatus("enviado");
-      setPlanMsg({
-        ok: true,
-        text: isAdmin ? "Plano atualizado ✓" : "Plano enviado para aprovação ✓",
-      });
+      setBriefMsg({ ok: true, text: isAdmin ? "Briefing atualizado ✓" : "Briefing enviado ✓" });
     } catch {
-      setPlanMsg({ ok: false, text: "Erro ao enviar o plano." });
+      setBriefMsg({ ok: false, text: "Erro ao enviar o briefing." });
     } finally {
-      setPlanBusy(false);
+      setBriefBusy(false);
     }
   }
 
+  const label = (v) => options.find((o) => o.value === v)?.label || v;
 
   return (
     <div className="card">
-      {aprovado && !isAdmin && planCtx?.ownerId && (
+      {aprovado && !isAdmin && ctx?.ownerId && (
         <div className="planbar st-aprovado">
           <div className="planbar-info">
-            <span className="plan-badge">Plano aprovado</span>
-            <span className="plan-week">Semana {planCtx.weekLabel}</span>
-            <span className="plan-count">
-              <b>{planCount}</b> negócio{planCount === 1 ? "" : "s"} combinados
-            </span>
-          </div>
-          <div className="planbar-actions">
-            <a className="btn-ghost" href="?view=agenda">Ver agenda da semana</a>
+            <span className="plan-badge">Briefing aprovado</span>
+            <span className="plan-week">{ctx.diaLabel}</span>
+            <span className="plan-count"><b>{total}</b> negócio{total === 1 ? "" : "s"} para hoje</span>
           </div>
         </div>
       )}
 
-      {canPlan && (
+      {podeEditar && (
         <div className={"planbar st-" + status}>
           <div className="planbar-info">
             <span className="plan-badge">{STATUS_LABEL[status]}</span>
-            <span className="plan-week">Semana {planCtx.weekLabel}</span>
-            <span className="plan-count">
-              <b>{planCount}</b> negócio{planCount === 1 ? "" : "s"} no plano
-            </span>
-            {isAdmin && <span className="plan-hint">Marque ou desmarque abaixo e salve</span>}
-            {status === "reprovado" && plan?.motivo && (
-              <span className="plan-motivo">Motivo: {plan.motivo}</span>
+            <span className="plan-week">{ctx.diaLabel}</span>
+            <span className="plan-count"><b>{total}</b> negócio{total === 1 ? "" : "s"} para hoje</span>
+            {status === "reprovado" && briefing?.motivo && (
+              <span className="plan-motivo">Motivo: {briefing.motivo}</span>
             )}
           </div>
           <div className="planbar-actions">
-            {planMsg && <span className={planMsg.ok ? "saved" : "err"}>{planMsg.text}</span>}
+            {briefMsg && <span className={briefMsg.ok ? "saved" : "err"}>{briefMsg.text}</span>}
             <button
               className="btn-primary"
-              onClick={enviarPlano}
-              disabled={planBusy || (!isAdmin && planCount === 0)}
+              onClick={enviarBriefing}
+              disabled={briefBusy || (!isAdmin && total === 0)}
             >
-              {planBusy
+              {briefBusy
                 ? "Salvando…"
                 : isAdmin
-                ? "Salvar plano do closer"
+                ? "Salvar briefing do closer"
                 : status === "rascunho"
-                ? "Enviar plano da semana"
-                : "Reenviar plano"}
+                ? "Enviar briefing do dia"
+                : "Reenviar briefing"}
             </button>
           </div>
         </div>
@@ -179,99 +148,99 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
         <table>
           <thead>
             <tr>
-              {canPlan && <th style={{ width: "15%" }}>Plano da semana</th>}
-              <th style={{ width: "19%" }}>Nome do negócio</th>
-              <th style={{ width: "14%" }}>Etapa atual</th>
+              {podeEditar && <th style={{ width: "11%" }}>Atuar hoje</th>}
+              <th style={{ width: "21%" }}>Nome do negócio</th>
+              <th style={{ width: "13%" }}>Etapa atual</th>
               <th style={{ width: "14%" }}>Próxima atividade</th>
-              <th style={{ width: "17%" }}>Evolução buscada</th>
-              <th style={{ width: "21%" }}>Observação</th>
+              <th style={{ width: "22%" }}>Evolução pretendida</th>
+              <th style={{ width: "19%" }}>Observação</th>
             </tr>
           </thead>
           <tbody>
-            {visible.map((r) => (
-              <tr key={r.id} className={r.id in items ? "in-plan" : ""}>
-                {canPlan && (
-                  <td>
-                    <label className="plan-check">
-                      <input
-                        type="checkbox"
-                        checked={r.id in items}
-                        onChange={() => togglePlan(r.id)}
-                        disabled={locked}
-                      />
-                      <span>Vou trabalhar</span>
-                    </label>
-                    {r.id in items && (
-                      <div className="dias" role="group" aria-label="Dia da semana">
-                        {DIAS.map((d) => (
-                          <button
-                            key={d.v}
-                            type="button"
-                            className={"dia" + (items[r.id] === d.v ? " on" : "")}
-                            onClick={() => setDia(r.id, items[r.id] === d.v ? "" : d.v)}
-                            disabled={locked}
-                            aria-pressed={items[r.id] === d.v}
-                          >
-                            {d.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                )}
-                <td className="deal">
-                  {r.id in items && (
-                    <span className="plan-flag">
-                      {DIAS.find((d) => d.v === items[r.id])?.label || "No plano"}
-                    </span>
+            {visible.map((r) => {
+              const item = items[r.id];
+              const dentro = !!item;
+              return (
+                <tr key={r.id} className={dentro ? "in-plan" : ""}>
+                  {podeEditar && (
+                    <td>
+                      <label className="plan-check">
+                        <input type="checkbox" checked={dentro} onChange={() => toggle(r)} />
+                        <span>Atuar</span>
+                      </label>
+                    </td>
                   )}
-                  <a className="deal-link" href={r.url} target="_blank" rel="noreferrer">
-                    {r.name}
-                  </a>
-                  <small>{r.amountText}</small>
-                </td>
-                <td>
-                  <span className="stage">
-                    <span className={"dot" + (r.adv ? " adv" : "")} />
-                    {r.stageLabel}
-                  </span>
-                </td>
-                <td>
-                  <div className="next">
-                    <span className={"date" + (r.next.none ? " none" : "")}>
-                      {r.next.dateText}
-                      {r.next.pill && (
-                        <span className={"pill-date " + r.next.pill.cls}>{r.next.pill.text}</span>
-                      )}
+                  <td className="deal">
+                    {dentro && <span className="plan-flag">Hoje</span>}
+                    <a className="deal-link" href={r.url} target="_blank" rel="noreferrer">
+                      {r.name}
+                    </a>
+                    <small>{r.amountText}</small>
+                  </td>
+                  <td>
+                    <span className="stage">
+                      <span className={"dot" + (r.adv ? " adv" : "")} />
+                      {r.stageLabel}
                     </span>
-                    {r.nextStep && <span className="activity">{r.nextStep}</span>}
-                  </div>
-                </td>
-                <td>
-                  <div className="act" data-v={TEMP_STYLE[r._temp] || ""}>
-                    <select value={r._temp} onChange={(e) => edit(r.id, { _temp: e.target.value })}>
-                      <option value="">— definir —</option>
-                      {options.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </td>
-                <td>
-                  <textarea
-                    className="obs"
-                    placeholder="Escrever observação…"
-                    value={r._obs}
-                    onChange={(e) => edit(r.id, { _obs: e.target.value })}
-                  />
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td>
+                    <div className="next">
+                      <span className={"date" + (r.next.none ? " none" : "")}>
+                        {r.next.dateText}
+                        {r.next.pill && (
+                          <span className={"pill-date " + r.next.pill.cls}>{r.next.pill.text}</span>
+                        )}
+                      </span>
+                      {r.nextStep && <span className="activity">{r.nextStep}</span>}
+                    </div>
+                  </td>
+                  <td>
+                    {/* Temperatura de hoje → para onde o closer pretende levar. */}
+                    <div className="evo">
+                      <span className={"temp-atual t-" + (TEMP_STYLE[r.temperatura] || "none")}>
+                        {r.temperatura ? label(r.temperatura) : "sem temperatura"}
+                      </span>
+                      <span className="evo-seta">→</span>
+                      {dentro && podeEditar ? (
+                        <div className="act" data-v={TEMP_STYLE[item.para] || ""}>
+                          <select value={item.para} onChange={(e) => setPara(r.id, e.target.value)}>
+                            <option value="">Levar para…</option>
+                            {options
+                              .filter((o) => o.value !== r.temperatura)
+                              .map((o) => (
+                                <option key={o.value} value={o.value}>
+                                  {o.label}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      ) : dentro ? (
+                        <span className={"temp-alvo t-" + (TEMP_STYLE[item.para] || "none")}>
+                          {item.para ? label(item.para) : "—"}
+                        </span>
+                      ) : (
+                        <span className="evo-vazio">—</span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <textarea
+                      className="obs"
+                      placeholder="Escrever observação…"
+                      value={r._obs}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, _obs: v } : x)));
+                        setMsg(null);
+                      }}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={canPlan ? 6 : 5} style={{ textAlign: "center", color: "var(--muted)", padding: "40px" }}>
+                <td colSpan={podeEditar ? 6 : 5} style={{ textAlign: "center", color: "var(--muted)", padding: "40px" }}>
                   {emptyLabel || "Nenhum negócio ativo no funil."}
                 </td>
               </tr>
@@ -279,6 +248,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
           </tbody>
         </table>
       </div>
+
       <div className="foot">
         <span>
           {rows.length} negócio{rows.length === 1 ? "" : "s"}
@@ -293,8 +263,8 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, pla
               <button onClick={() => setPage(pageSafe + 1)} disabled={pageSafe >= pageCount - 1}>›</button>
             </div>
           )}
-          <button className="save" onClick={saveAll} disabled={saving || dirty.length === 0}>
-            {saving ? "Salvando…" : dirty.length ? `Salvar diário do dia (${dirty.length})` : "Tudo salvo"}
+          <button className="save" onClick={salvarObs} disabled={saving || dirty.length === 0}>
+            {saving ? "Salvando…" : dirty.length ? `Salvar observações (${dirty.length})` : "Tudo salvo"}
           </button>
         </div>
       </div>
