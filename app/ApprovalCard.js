@@ -103,6 +103,9 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
     <div className={"aprov-card st-" + status}>
       <div className="aprov-head">
         <div className="aprov-quem">
+          <span className="aprov-pfp">
+            {plano.foto ? <img src={plano.foto} alt={plano.nome} /> : plano.nome.slice(0, 2).toUpperCase()}
+          </span>
           <span className="aprov-nome">{plano.nome}</span>
           <span className="aprov-seg">{plano.seg}</span>
           <span className="plan-badge">{STATUS_LABEL[status]}</span>

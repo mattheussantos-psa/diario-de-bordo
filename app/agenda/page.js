@@ -4,7 +4,7 @@ import { auth, signOut } from "../../auth";
 import { getDealsByIds } from "../../lib/hubspot";
 import { getBriefingsForDays, dbReady } from "../../lib/db";
 import { weekLabel, weekDays, DIAS } from "../../lib/week";
-import { CLOSERS_BY_SEG, AVATARS, TEMP_STYLE, dealUrl, NOME_CLOSER } from "../../lib/config";
+import { CLOSERS_BY_SEG, TEMP_STYLE, dealUrl, NOME_CLOSER } from "../../lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,6 @@ export default async function AgendaGeral({ searchParams }) {
   if (!session.user.isAdmin) redirect("/");
 
   const userName = session.user.name || session.user.email;
-  const avatar = AVATARS[session.user.email.toLowerCase()];
   const dias = weekDays();
   const seg = searchParams?.seg === "B2C" ? "B2C" : "B2B";
 
@@ -67,7 +66,7 @@ export default async function AgendaGeral({ searchParams }) {
           </div>
         </div>
         <div className="who">
-          <div className="pfp">{avatar ? <img src={avatar} alt={userName} /> : initials(userName)}</div>
+          <div className="pfp">{initials(userName)}</div>
           <div className="who-name">{userName}</div>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
             <button className="signout" type="submit">Sair</button>

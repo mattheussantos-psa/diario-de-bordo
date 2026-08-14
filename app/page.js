@@ -5,7 +5,7 @@ import {
   getOpenDeals,
   getTemperaturaOptions,
 } from "../lib/hubspot";
-import { AVATARS, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES, CLOSERS, SEG_CLOSER } from "../lib/config";
+import { fotoDe, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES, CLOSERS, SEG_CLOSER } from "../lib/config";
 import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
 import Link from "next/link";
@@ -131,7 +131,8 @@ export default async function Page({ searchParams }) {
   const hoje = rows.filter((d) => d.next.pill?.cls === "today").length;
   const atrasadas = rows.filter((d) => d.next.pill?.cls === "late").length;
   const valor = rows.reduce((s, d) => s + (d.amount || 0), 0);
-  const avatar = AVATARS[email];
+  // Foto do closer logado; admin sem funil próprio cai nas iniciais.
+  const avatar = !isAdmin && viewOwner ? fotoDe(viewOwner.ownerId) : null;
 
   return (
     <div className="wrap">

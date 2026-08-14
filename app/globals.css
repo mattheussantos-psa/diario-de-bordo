@@ -320,3 +320,7 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .login-card p { color: var(--muted); margin: 0 0 6px; }
 .gbtn { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: #fff; border: 0; font: inherit; font-weight: 600; font-size: 15px; padding: 13px 22px; border-radius: 12px; cursor: pointer; }
 @media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, 1fr); } .title { font-size: 24px; } }
+
+.aprov-pfp { width: 34px; height: 34px; border-radius: 999px; background: var(--azul); color: #fff;
+  display: grid; place-items: center; font-weight: 700; font-size: 12px; overflow: hidden; flex: none; }
+.aprov-pfp img { width: 100%; height: 100%; object-fit: cover; }

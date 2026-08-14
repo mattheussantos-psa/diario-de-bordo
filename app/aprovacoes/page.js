@@ -4,7 +4,7 @@ import { auth, signOut } from "../../auth";
 import { getDealsByIds, getTemperaturaOptions } from "../../lib/hubspot";
 import { getDayBriefings, getBriefingHistory, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
-import { CLOSERS_BY_SEG, AVATARS, NOME_CLOSER, SEG_CLOSER } from "../../lib/config";
+import { CLOSERS_BY_SEG, NOME_CLOSER, SEG_CLOSER, fotoDe } from "../../lib/config";
 import { seedDia } from "../../lib/seed";
 import ApprovalCard from "../ApprovalCard";
 
@@ -20,7 +20,6 @@ export default async function Aprovacoes({ searchParams }) {
   if (!session.user.isAdmin) redirect("/");
 
   const userName = session.user.name || session.user.email;
-  const avatar = AVATARS[session.user.email.toLowerCase()];
   const dia = dayKey();
   const filtro = searchParams?.st || "pendentes";
 
@@ -38,7 +37,7 @@ export default async function Aprovacoes({ searchParams }) {
 
   const todos = plans
     .filter((p) => segOf(p.ownerId))
-    .map((p) => ({ ...p, nome: nomeDe[p.ownerId] || `Closer ${p.ownerId}`, seg: segOf(p.ownerId) }));
+    .map((p) => ({ ...p, nome: nomeDe[p.ownerId] || `Closer ${p.ownerId}`, seg: segOf(p.ownerId), foto: fotoDe(p.ownerId) }));
 
   const pendentes = todos.filter((p) => p.status === "enviado");
   const decididos = todos.filter((p) => p.status === "aprovado" || p.status === "reprovado");
@@ -76,7 +75,7 @@ export default async function Aprovacoes({ searchParams }) {
           </div>
         </div>
         <div className="who">
-          <div className="pfp">{avatar ? <img src={avatar} alt={userName} /> : initials(userName)}</div>
+          <div className="pfp">{initials(userName)}</div>
           <div className="who-name">{userName}</div>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
             <button className="signout" type="submit">Sair</button>
