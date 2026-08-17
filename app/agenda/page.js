@@ -2,18 +2,23 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { getDealsByIds } from "../../lib/hubspot";
-import { getBriefingsForDays, dbReady } from "../../lib/db";
-import { weekLabel, weekDays, DIAS } from "../../lib/week";
-import { CLOSERS_BY_SEG, TEMP_STYLE, dealUrl, NOME_CLOSER } from "../../lib/config";
+import { getDayBriefings, dbReady } from "../../lib/db";
+import { dayKey, dayLabel } from "../../lib/week";
+import { CLOSERS, TEMP_STYLE, dealUrl, fotoDe } from "../../lib/config";
 
 export const dynamic = "force-dynamic";
-
-const DIA_LONGO = ["SEG.", "TER.", "QUA.", "QUI.", "SEX."];
 
 function initials(name) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 const brl = (n) => (n == null ? "" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 }));
+
+const STATUS_LABEL = {
+  rascunho: "Rascunho",
+  enviado: "Aguardando",
+  aprovado: "Aprovado",
+  reprovado: "Reprovado",
+};
 
 export default async function AgendaGeral({ searchParams }) {
   const session = await auth();
@@ -21,36 +26,24 @@ export default async function AgendaGeral({ searchParams }) {
   if (!session.user.isAdmin) redirect("/");
 
   const userName = session.user.name || session.user.email;
-  const dias = weekDays();
+  const dia = searchParams?.dia || dayKey();
   const seg = searchParams?.seg === "B2C" ? "B2C" : "B2B";
 
-  const plans = await getBriefingsForDays(dias);
-  const nomeDe = NOME_CLOSER;
+  const briefings = await getDayBriefings(dia);
+  const porOwner = Object.fromEntries(briefings.map((b) => [String(b.ownerId), b]));
 
-  // Só os closers do segmento escolhido, na ordem cadastrada.
-  const doSeg = CLOSERS_BY_SEG[seg];
-  const planos = plans.filter(
-    (p) => doSeg.includes(String(p.ownerId)) && Object.keys(p.items).length
-  );
+  // Todos os closers do time aparecem — inclusive quem ainda não enviou nada.
+  const time = CLOSERS[seg].map((c) => ({
+    ...c,
+    foto: fotoDe(c.id),
+    briefing: porOwner[c.id] || null,
+  }));
 
-  const ids = planos.flatMap((p) => Object.keys(p.items));
+  const ids = briefings.flatMap((b) => Object.keys(b.items));
   const dealsById = ids.length ? await getDealsByIds(ids) : {};
 
-  // Cada briefing já pertence a um dia; agrupa por data.
-  const porDia = {};
-  for (const d of dias) porDia[d] = [];
-  for (const p of planos) {
-    const nome = nomeDe[p.ownerId] || `Closer ${p.ownerId}`;
-    for (const [dealId, v] of Object.entries(p.items)) {
-      const negocio = dealsById[dealId];
-      if (!negocio) continue;
-      (porDia[p.dia] ||= []).push({ closer: nome, status: p.status, evo: v, ...negocio });
-    }
-  }
-
-
-  const hojeStr = new Date().toDateString();
-  const totalNeg = ids.length;
+  const totalNeg = time.reduce((s, c) => s + Object.keys(c.briefing?.items || {}).length, 0);
+  const enviaram = time.filter((c) => c.briefing && Object.keys(c.briefing.items).length).length;
 
   return (
     <div className="wrap">
@@ -59,9 +52,9 @@ export default async function AgendaGeral({ searchParams }) {
           <img className="logo" src="/logo-psa.png" alt="PSA" />
           <div className="divider" />
           <div>
-            <div className="title">Agenda geral</div>
+            <div className="title">Agenda do dia</div>
             <div className="subtitle">
-              Semana {weekLabel()} · {totalNeg} negócio{totalNeg === 1 ? "" : "s"} nos briefings
+              {dayLabel(dia)} · {enviaram} de {time.length} closers · {totalNeg} negócio{totalNeg === 1 ? "" : "s"}
             </div>
           </div>
         </div>
@@ -78,7 +71,7 @@ export default async function AgendaGeral({ searchParams }) {
         <div className="viewtoggle">
           <Link href="/">Diário de bordo</Link>
           <Link href="/aprovacoes">Aprovações</Link>
-          <Link href="/agenda" className="on">Agenda geral</Link>
+          <Link href="/agenda" className="on">Agenda do dia</Link>
         </div>
         <div className="seg-toggle">
           {["B2B", "B2C"].map((s) => (
@@ -89,48 +82,59 @@ export default async function AgendaGeral({ searchParams }) {
 
       {!dbReady() && <div className="card"><div className="cal-empty">Banco não configurado.</div></div>}
 
-      {dbReady() && planos.length === 0 && (
-        <div className="card"><div className="cal-empty">Nenhum briefing registrado nesta semana no {seg}.</div></div>
-      )}
-
-      {planos.length > 0 && (
-        <div className="card">
-          <div className="cal-grid">
-            {DIAS.map((d, i) => {
-              const data = new Date(dias[i] + "T12:00:00");
-              const isHoje = data.toDateString() === hojeStr;
-              const lista = porDia[dias[i]] || [];
-              return (
-                <div className={"cal-col" + (isHoje ? " hoje" : "")} key={dias[i]}>
-                  <div className="cal-head">
-                    <span className="cal-dow">{DIA_LONGO[i]}</span>
-                    <span className={"cal-day" + (isHoje ? " badge" : "")}>{data.getDate()}</span>
-                    <span className="cal-qtd">{lista.length} negócio{lista.length === 1 ? "" : "s"}</span>
+      {dbReady() && (
+        <div className="dia-grid">
+          {time.map((c) => {
+            const itens = Object.entries(c.briefing?.items || {});
+            const valor = itens.reduce((s, [id]) => s + (dealsById[id]?.amount || 0), 0);
+            const st = c.briefing?.status;
+            return (
+              <div className={"dia-card" + (itens.length ? " st-" + st : " vazio")} key={c.id}>
+                <div className="dia-head">
+                  <span className="aprov-pfp">
+                    {c.foto ? <img src={c.foto} alt={c.nome} /> : initials(c.nome)}
+                  </span>
+                  <div className="dia-quem">
+                    <span className="dia-nome">{c.nome}</span>
+                    <span className="dia-meta">
+                      {itens.length
+                        ? `${itens.length} negócio${itens.length === 1 ? "" : "s"} · ${brl(valor)}`
+                        : "sem briefing hoje"}
+                    </span>
                   </div>
-                  <div className="cal-body">
-                    {lista.length === 0 && <div className="cal-vazio">—</div>}
-                    {lista.map((n, k) => (
-                      <a
-                        className={"cal-card v-" + (TEMP_STYLE[n.temperatura] || "none")}
-                        key={n.id + "-" + k}
-                        href={dealUrl(n.id)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <span className="cal-closer">{n.closer}</span>
-                        <span className="cal-nome">{n.name}</span>
-                        <span className="cal-meta">{brl(n.amount)}</span>
-                        {n.evo?.para && (
-                          <span className="cal-evo">{n.evo.de || "—"} → <b>{n.evo.para}</b></span>
-                        )}
-                      </a>
-                    ))}
-                  </div>
+                  {itens.length > 0 && <span className="plan-badge">{STATUS_LABEL[st]}</span>}
                 </div>
-              );
-            })}
-          </div>
 
+                {itens.length > 0 && (
+                  <div className="dia-itens">
+                    {itens.map(([id, v]) => {
+                      const n = dealsById[id];
+                      if (!n) return null;
+                      return (
+                        <a
+                          className={"dia-item v-" + (TEMP_STYLE[v.de] || "none")}
+                          key={id}
+                          href={dealUrl(id)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <span className="dia-item-nome">{n.name}</span>
+                          <span className="dia-item-evo">
+                            <span className={"mini t-" + (TEMP_STYLE[v.de] || "none")}>{v.de || "—"}</span>
+                            <span className="evo-seta">→</span>
+                            <span className={"mini forte t-" + (TEMP_STYLE[v.para] || "none")}>
+                              {v.para || "—"}
+                            </span>
+                            <span className="dia-item-val">{brl(n.amount)}</span>
+                          </span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
