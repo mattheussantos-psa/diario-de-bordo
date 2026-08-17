@@ -33,11 +33,22 @@ export default async function AgendaGeral({ searchParams }) {
   const porOwner = Object.fromEntries(briefings.map((b) => [String(b.ownerId), b]));
 
   // Todos os closers do time aparecem — inclusive quem ainda não enviou nada.
-  const time = CLOSERS[seg].map((c) => ({
-    ...c,
-    foto: fotoDe(c.id),
-    briefing: porOwner[c.id] || null,
-  }));
+  // Ordem por urgência para o gestor: o que espera decisão primeiro, quem não
+  // enviou por último. Dentro do mesmo grupo, mantém a ordem do cadastro.
+  const PESO = { enviado: 0, reprovado: 1, aprovado: 2, rascunho: 3 };
+  const time = CLOSERS[seg]
+    .map((c, i) => {
+      const briefing = porOwner[c.id] || null;
+      const temItens = briefing && Object.keys(briefing.items).length > 0;
+      return {
+        ...c,
+        i,
+        foto: fotoDe(c.id),
+        briefing,
+        peso: temItens ? PESO[briefing.status] ?? 3 : 4, // sem briefing: por último
+      };
+    })
+    .sort((a, b) => a.peso - b.peso || a.i - b.i);
 
   const ids = briefings.flatMap((b) => Object.keys(b.items));
   const dealsById = ids.length ? await getDealsByIds(ids) : {};

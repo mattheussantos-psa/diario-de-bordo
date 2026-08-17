@@ -286,9 +286,13 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .aprov-pfp img { width: 100%; height: 100%; object-fit: cover; }
 
 /* Agenda do dia: um cartão por closer, compacto */
-.dia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; align-items: start; }
+/* Colunas independentes: cartões de alturas diferentes se encaixam sem deixar
+   buracos, o que a grade fazia quando um closer tinha muito mais negócios. */
+.dia-grid { columns: 380px auto; column-gap: 16px; }
+.dia-card { break-inside: avoid; margin-bottom: 16px; }
 .dia-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow); overflow: hidden; border-left: 4px solid var(--azul); }
+.dia-card.st-enviado { border-left-color: var(--azul); }
 .dia-card.st-aprovado { border-left-color: #17803d; }
 .dia-card.st-reprovado { border-left-color: var(--laranja); }
 .dia-card.vazio { border-left-color: var(--line); background: var(--surface-2); box-shadow: none; }
