@@ -180,8 +180,10 @@ export default async function Page({ searchParams }) {
         <div className="kpi"><div className="lab">Valor no funil</div><div className="val">{brl(valor)}</div><div className="sub">soma dos negócios abertos</div></div>
       </div>
 
-            <DealsTable
-
+      {/* key força remontagem ao trocar de closer/segmento — sem ela a tabela
+          fica presa na lista anterior. */}
+      <DealsTable
+        key={`${searchParams?.closer || "me"}-${seg}`}
         deals={rows}
         options={tempOptions}
         closerName={viewOwner ? viewOwner.name : ""}
