@@ -288,7 +288,7 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 /* Agenda do dia: um cartão por closer, compacto */
 /* Colunas independentes: cartões de alturas diferentes se encaixam sem deixar
    buracos, o que a grade fazia quando um closer tinha muito mais negócios. */
-.dia-grid { columns: 380px auto; column-gap: 16px; }
+.dia-grid { columns: 400px auto; column-gap: 16px; column-fill: balance; }
 .dia-card { break-inside: avoid; margin-bottom: 16px; }
 .dia-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow); overflow: hidden; border-left: 4px solid var(--azul); }
@@ -359,3 +359,16 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .foco-vazio { padding: 60px 24px; text-align: center; color: var(--muted); }
 .foco-vazio h3 { font-family: "Bruta Pro"; color: var(--ink); font-size: 22px; text-transform: uppercase; margin: 0 0 8px; }
 .foco-vazio p { margin: 0; font-size: 14px; }
+
+
+/* Faixa de quem ainda não enviou o briefing do dia */
+.sem-briefing { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius);
+  padding: 12px 18px; margin-bottom: 18px; }
+.sem-briefing-lab { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  color: var(--muted); }
+.sem-briefing-lista { display: flex; gap: 10px; flex-wrap: wrap; }
+.sem-chip { display: inline-flex; align-items: center; gap: 8px; background: var(--bg);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px 4px 4px;
+  font-size: 13px; font-weight: 600; color: var(--ink); }
+.sem-chip .aprov-pfp { width: 26px; height: 26px; font-size: 10px; }

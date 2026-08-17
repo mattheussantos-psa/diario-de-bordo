@@ -50,6 +50,11 @@ export default async function AgendaGeral({ searchParams }) {
     })
     .sort((a, b) => a.peso - b.peso || a.i - b.i);
 
+  // Quem não enviou vira uma faixa compacta; misturado aos cartões, quebrava a
+  // leitura em coluna e espalhava os nomes pela tela.
+  const comBriefing = time.filter((c) => c.peso < 4);
+  const semBriefing = time.filter((c) => c.peso === 4);
+
   const ids = briefings.flatMap((b) => Object.keys(b.items));
   const dealsById = ids.length ? await getDealsByIds(ids) : {};
 
@@ -93,9 +98,25 @@ export default async function AgendaGeral({ searchParams }) {
 
       {!dbReady() && <div className="card"><div className="cal-empty">Banco não configurado.</div></div>}
 
+      {dbReady() && semBriefing.length > 0 && (
+        <div className="sem-briefing">
+          <span className="sem-briefing-lab">Sem briefing hoje ({semBriefing.length})</span>
+          <div className="sem-briefing-lista">
+            {semBriefing.map((c) => (
+              <span className="sem-chip" key={c.id}>
+                <span className="aprov-pfp">
+                  {c.foto ? <img src={c.foto} alt={c.nome} /> : initials(c.nome)}
+                </span>
+                {c.nome}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {dbReady() && (
         <div className="dia-grid">
-          {time.map((c) => {
+          {comBriefing.map((c) => {
             const itens = Object.entries(c.briefing?.items || {});
             const valor = itens.reduce((s, [id]) => s + (dealsById[id]?.amount || 0), 0);
             const st = c.briefing?.status;
