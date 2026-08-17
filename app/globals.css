@@ -316,3 +316,42 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .mini.t-vv { background: var(--laranja-soft); color: var(--laranja); }
 .mini.t-cl { background: #f4efe9; color: #a9702f; }
 .dia-item-val { margin-left: auto; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Meu dia: foco pessoal do closer */
+.foco-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px 20px; margin-bottom: 16px; }
+.foco-resumo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.foco-status { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+  padding: 6px 12px; border-radius: 999px; background: var(--ink-soft); color: var(--muted); }
+.foco-status.enviado { background: var(--azul); color: #fff; }
+.foco-status.aprovado { background: #17803d; color: #fff; }
+.foco-status.reprovado { background: var(--laranja); color: #fff; }
+.foco-dia { font-size: 15px; font-weight: 700; color: var(--ink); }
+.foco-nums { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.foco-nums b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.foco-alerta { color: var(--laranja); }
+.foco-alerta b { color: var(--laranja); }
+.foco-motivo { background: var(--laranja-soft); color: var(--laranja); font-size: 13px; font-weight: 600;
+  padding: 12px 18px; border-radius: 12px; margin-bottom: 16px; }
+
+.foco-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+.foco-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 18px; display: flex; flex-direction: column; gap: 12px;
+  border-top: 3px solid var(--azul); transition: .15s; }
+.foco-card:hover { transform: translateY(-2px); }
+.foco-card.atrasado { border-top-color: var(--laranja); }
+.foco-card-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.foco-val { font-size: 13px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.foco-nome { font-size: 15px; font-weight: 700; color: var(--ink); text-decoration: none; line-height: 1.35; }
+.foco-nome:hover { color: var(--azul); }
+.foco-evo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+.foco-rodape { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--line); padding-top: 10px; }
+.foco-passo { font-size: 12px; color: var(--muted); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.foco-obs { font-size: 12.5px; color: var(--ink); background: var(--azul-soft); border-radius: 10px;
+  padding: 10px 12px; line-height: 1.4; }
+.foco-vazio { padding: 60px 24px; text-align: center; color: var(--muted); }
+.foco-vazio h3 { font-family: "Bruta Pro"; color: var(--ink); font-size: 22px; text-transform: uppercase; margin: 0 0 8px; }
+.foco-vazio p { margin: 0; font-size: 14px; }

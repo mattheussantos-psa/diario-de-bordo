@@ -8,6 +8,7 @@ import {
 import { fotoDe, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES, CLOSERS, SEG_CLOSER } from "../lib/config";
 import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
+import FocoDia from "./FocoDia";
 import Link from "next/link";
 import { getBriefing, getDayBriefings, dbReady } from "../lib/db";
 import { dayKey, dayLabel } from "../lib/week";
@@ -116,6 +117,16 @@ export default async function Page({ searchParams }) {
 
   const dia = dayKey();
   const briefing = viewOwner ? await getBriefing(viewOwner.ownerId, dia) : null;
+  const isFoco = searchParams?.view === "foco";
+
+  // Preserva closer/segmento ao alternar a visão.
+  const qs = (view) => {
+    const q = new URLSearchParams();
+    if (searchParams?.closer) q.set("closer", searchParams.closer);
+    q.set("seg", seg);
+    if (view) q.set("view", view);
+    return "/?" + q.toString();
+  };
   const pendentes = isAdmin
     ? (await getDayBriefings(dia)).filter((b) => b.status === "enviado").length
     : 0;
@@ -180,8 +191,25 @@ export default async function Page({ searchParams }) {
         <div className="kpi"><div className="lab">Valor no funil</div><div className="val">{brl(valor)}</div><div className="sub">soma dos negócios abertos</div></div>
       </div>
 
-      {/* key força remontagem ao trocar de closer/segmento — sem ela a tabela
-          fica presa na lista anterior. */}
+      {viewOwner && (
+        <div className="viewbar">
+          <div className="viewtoggle">
+            <Link href={qs("")} className={isFoco ? "" : "on"}>Tabela</Link>
+            <Link href={qs("foco")} className={isFoco ? "on" : ""}>Meu dia</Link>
+          </div>
+        </div>
+      )}
+
+      {isFoco ? (
+        <FocoDia
+          rows={rows}
+          briefing={briefing}
+          options={tempOptions}
+          ctx={{ diaLabel: dayLabel(dia) }}
+        />
+      ) : (
+      /* key força remontagem ao trocar de closer/segmento — sem ela a tabela
+         fica presa na lista anterior. */
       <DealsTable
         key={`${searchParams?.closer || "me"}-${seg}`}
         deals={rows}
@@ -197,6 +225,7 @@ export default async function Page({ searchParams }) {
           dbReady: dbReady(),
         }}
       />
+      )}
     </div>
   );
 }
