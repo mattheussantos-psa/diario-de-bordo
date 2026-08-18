@@ -437,3 +437,19 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .whats-previa { background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
   padding: 14px 16px; font-family: inherit; font-size: 12.5px; line-height: 1.5; color: var(--ink);
   white-space: pre-wrap; margin: 0; max-height: 320px; overflow: auto; width: 100%; }
+
+/* Enquete: campos para colar em "+ → Enquete" do WhatsApp */
+.btn-whats.on, .btn-ghost.on { outline: 2px solid var(--azul); outline-offset: 1px; }
+.enq { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 520px; }
+.enq-passo { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.enq-passo b { color: var(--ink); }
+.enq-campo { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px;
+  font: inherit; font-size: 12.5px; cursor: pointer; transition: .15s; }
+.enq-campo:hover { border-color: var(--azul); background: var(--azul-soft); }
+.enq-pergunta { background: var(--surface); font-weight: 600; }
+.enq-lab { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--muted);
+  min-width: 18px; flex: none; }
+.enq-valor { flex: 1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.enq-copiar { font-size: 10.5px; color: var(--azul); font-weight: 700; flex: none; }
+.enq-aviso { font-size: 11.5px; color: var(--laranja); font-weight: 600; }
