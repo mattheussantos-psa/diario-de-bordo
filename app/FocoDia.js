@@ -1,5 +1,6 @@
 import { TEMP_STYLE, dealUrl } from "../lib/config";
 import { estrategiaPorId, numeroDa } from "../lib/estrategias";
+import BotaoWhats from "./BotaoWhats";
 
 const brl = (n) => (n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 }));
 
@@ -49,6 +50,20 @@ export default function FocoDia({ rows, briefing, ctx, options = [] }) {
           <span className={"foco-status " + STATUS[status].cls}>{STATUS[status].txt}</span>
           <span className="foco-dia">{ctx.diaLabel}</span>
         </div>
+        {status === "aprovado" && (
+          <BotaoWhats
+            closer={ctx.closerName || ""}
+            diaLabel={ctx.diaLabel}
+            itens={ordenados.map((r) => ({
+              nome: r.name,
+              valor: r.amount,
+              de: items[r.id].de ? label(items[r.id].de) : "",
+              para: items[r.id].para ? label(items[r.id].para) : "",
+              estrategia: items[r.id].estrategia,
+              atrasada: r.next?.pill?.cls === "late",
+            }))}
+          />
+        )}
         <div className="foco-nums">
           <span><b>{doDia.length}</b> negócio{doDia.length === 1 ? "" : "s"}</span>
           <span><b>{brl(valor)}</b> em jogo</span>

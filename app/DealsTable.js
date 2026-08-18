@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { TEMP_STYLE } from "../lib/config";
 import { ESTRATEGIAS, numeroDa } from "../lib/estrategias";
+import BotaoWhats from "./BotaoWhats";
 
 const STATUS_LABEL = {
   rascunho: "Não enviado",
@@ -130,6 +131,20 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
             <span className="plan-week">{ctx.diaLabel}</span>
             <span className="plan-count"><b>{total}</b> negócio{total === 1 ? "" : "s"} para hoje</span>
           </div>
+          <BotaoWhats
+            closer={closerName}
+            diaLabel={ctx.diaLabel}
+            itens={rows
+              .filter((r) => r.id in items)
+              .map((r) => ({
+                nome: r.name,
+                valor: r.amount,
+                de: items[r.id].de ? label(items[r.id].de) : "",
+                para: items[r.id].para ? label(items[r.id].para) : "",
+                estrategia: items[r.id].estrategia,
+                atrasada: r.next?.pill?.cls === "late",
+              }))}
+          />
         </div>
       )}
 

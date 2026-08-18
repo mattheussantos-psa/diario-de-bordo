@@ -225,7 +225,7 @@ export default async function Page({ searchParams }) {
           briefing={briefing}
           options={tempOptions}
           seg={seg}
-          ctx={{ diaLabel: dayLabel(dia) }}
+          ctx={{ diaLabel: dayLabel(dia), closerName: viewOwner ? viewOwner.name : "" }}
         />
       ) : (
       /* key força remontagem ao trocar de closer/segmento — sem ela a tabela
