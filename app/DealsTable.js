@@ -44,6 +44,13 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
 
   const dirty = useMemo(() => rows.filter((r) => r._obs !== r.observacoes), [rows]);
 
+  // Estratégia e evolução são obrigatórias para enviar.
+  const incompletos = useMemo(
+    () => Object.entries(items).filter(([, v]) => !v.para || !v.estrategia).map(([id]) => id),
+    [items]
+  );
+  const falta = (id) => incompletos.includes(String(id));
+
   function toggle(r) {
     setItems((it) => {
       const next = { ...it };
@@ -128,6 +135,11 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
             <span className="plan-badge">{STATUS_LABEL[status]}</span>
             <span className="plan-week">{ctx.diaLabel}</span>
             <span className="plan-count"><b>{total}</b> negócio{total === 1 ? "" : "s"} para hoje</span>
+            {incompletos.length > 0 && (
+              <span className="plan-motivo">
+                {incompletos.length} sem estratégia ou evolução
+              </span>
+            )}
             {status === "reprovado" && briefing?.motivo && (
               <span className="plan-motivo">Motivo: {briefing.motivo}</span>
             )}
@@ -137,7 +149,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
             <button
               className="btn-primary"
               onClick={enviarBriefing}
-              disabled={briefBusy || (!isAdmin && total === 0)}
+              disabled={briefBusy || incompletos.length > 0 || (!isAdmin && total === 0)}
+              title={
+                incompletos.length > 0
+                  ? "Defina estratégia e evolução em todos os negócios marcados"
+                  : undefined
+              }
             >
               {briefBusy
                 ? "Salvando…"
@@ -169,7 +186,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
               const item = items[r.id];
               const dentro = !!item;
               return (
-                <tr key={r.id} className={dentro ? "in-plan" : ""}>
+                <tr key={r.id} className={dentro ? "in-plan" + (falta(r.id) ? " incompleto" : "") : ""}>
                   {podeEditar && (
                     <td>
                       <label className="plan-check">
@@ -207,7 +224,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                     {dentro && podeEditar ? (
                       <div className="select-wrap">
                         <select
-                          className="estrat-select"
+                          className={"estrat-select" + (!item.estrategia ? " falta" : "")}
                           value={item.estrategia || ""}
                           onChange={(e) => setEstrategia(r.id, e.target.value)}
                         >
@@ -241,7 +258,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                       <div className="evo-linha">
                         <span className="evo-lab">para</span>
                         {dentro && podeEditar ? (
-                          <div className="act" data-v={TEMP_STYLE[item.para] || ""}>
+                          <div className={"act" + (!item.para ? " falta" : "")} data-v={TEMP_STYLE[item.para] || ""}>
                             <select value={item.para} onChange={(e) => setPara(r.id, e.target.value)}>
                               <option value="">definir…</option>
                               {options

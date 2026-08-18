@@ -54,6 +54,11 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
   }
 
   async function salvarEdicao() {
+    const faltando = Object.values(rascunho).filter((v) => !v.para || !v.estrategia).length;
+    if (faltando > 0) {
+      setMsg({ ok: false, text: `${faltando} negócio(s) sem estratégia ou evolução.` });
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {

@@ -37,8 +37,21 @@ export async function POST(req) {
   // Admin ajustando preserva a situação; closer enviando manda para aprovação.
   const status = body.manterStatus && session.user.isAdmin ? null : "enviado";
 
+  // Estratégia e evolução são obrigatórias: um briefing sem elas não diz nada
+  // ao gestor. Validado aqui também, não só na tela.
+  const items = normalizar(body.items);
+  const incompletos = Object.values(items).filter((v) => !v.para || !v.estrategia).length;
+  if (incompletos > 0) {
+    return Response.json(
+      {
+        error: `${incompletos} negócio(s) sem estratégia ou evolução pretendida.`,
+      },
+      { status: 400 }
+    );
+  }
+
   try {
-    await saveBriefing(ownerId, dia, normalizar(body.items), status);
+    await saveBriefing(ownerId, dia, items, status);
   } catch (e) {
     console.error("[briefing] falha ao salvar:", e);
     return Response.json({ error: "Falha ao salvar o briefing." }, { status: 500 });
