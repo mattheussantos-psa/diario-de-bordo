@@ -68,6 +68,8 @@ export default async function Page({ searchParams }) {
   let viewOwner = null;
   let owners = [];
   let deals = [];
+  // Quem está logado (para a foto do topo) — o closer visualizado pode ser outro.
+  let meuOwnerId = null;
 
   // Falha do HubSpot (cota diária, indisponibilidade) vira aviso, não tela de erro.
   let erroHubspot = null;
@@ -83,6 +85,7 @@ export default async function Page({ searchParams }) {
     owners = CLOSERS[seg].map((c) => ({ ownerId: c.id, name: c.nome }));
     // Líder é closer também: sem seleção, abre no próprio funil.
     const proprio = !isAdmin ? await getOwnerByEmail(email).catch(() => null) : null;
+    meuOwnerId = proprio?.ownerId || null;
     const selId = searchParams?.closer || (proprio ? String(proprio.ownerId) : "");
     if (selId && owners.some((o) => String(o.ownerId) === String(selId)) && podeGerirCloser(session.user, selId)) {
       const sel = owners.find((o) => String(o.ownerId) === String(selId));
@@ -110,6 +113,7 @@ export default async function Page({ searchParams }) {
         </div>
       );
     }
+    meuOwnerId = viewOwner.ownerId;
     // O segmento do closer vem do time dele, não da URL.
     seg = segOf(viewOwner.ownerId) || seg;
     try {
@@ -151,8 +155,8 @@ export default async function Page({ searchParams }) {
   const hoje = rows.filter((d) => d.next.pill?.cls === "today").length;
   const atrasadas = rows.filter((d) => d.next.pill?.cls === "late").length;
   const valor = rows.reduce((s, d) => s + (d.amount || 0), 0);
-  // Foto do closer logado; admin sem funil próprio cai nas iniciais.
-  const avatar = viewOwner ? fotoDe(viewOwner.ownerId) : null;
+  // Foto de quem está logado, nunca a do closer que ele está visualizando.
+  const avatar = meuOwnerId ? fotoDe(meuOwnerId) : null;
 
   return (
     <div className="wrap">
