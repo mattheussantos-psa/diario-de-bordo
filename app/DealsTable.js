@@ -106,8 +106,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
         body: JSON.stringify({ ownerId: ctx.ownerId, dia: ctx.dia, items, manterStatus: isAdmin }),
       });
       if (!res.ok) throw new Error();
-      if (!isAdmin) setStatus("enviado");
-      setBriefMsg({ ok: true, text: isAdmin ? "Briefing atualizado ✓" : "Briefing enviado ✓" });
+      // Rascunho vira "enviado" também quando o gestor monta pelo closer.
+      if (status === "rascunho") setStatus("enviado");
+      setBriefMsg({
+        ok: true,
+        text: status === "rascunho" ? "Enviado para aprovação ✓" : "Briefing atualizado ✓",
+      });
     } catch {
       setBriefMsg({ ok: false, text: "Erro ao enviar o briefing." });
     } finally {
@@ -158,10 +162,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
             >
               {briefBusy
                 ? "Salvando…"
+                : status === "rascunho"
+                ? isAdmin
+                  ? "Enviar briefing para aprovação"
+                  : "Enviar briefing do dia"
                 : isAdmin
                 ? "Salvar briefing do closer"
-                : status === "rascunho"
-                ? "Enviar briefing do dia"
                 : "Reenviar briefing"}
             </button>
           </div>
