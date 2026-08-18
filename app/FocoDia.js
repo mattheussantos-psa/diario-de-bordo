@@ -80,17 +80,7 @@ export default function FocoDia({ rows, briefing, ctx, options = [] }) {
                 {r.name}
               </a>
 
-              <div className="foco-evo">
-                <span className={"temp-atual t-" + (TEMP_STYLE[it.de] || "none")}>
-                  {it.de ? label(it.de) : "sem temperatura"}
-                </span>
-                <span className="evo-seta">→</span>
-                <span className={"temp-alvo t-" + (TEMP_STYLE[it.para] || "none")}>
-                  {it.para ? label(it.para) : "definir evolução"}
-                </span>
-              </div>
-
-              {/* A estratégia é o "como" — vem logo abaixo do "para onde". */}
+              {/* A estratégia é o "como": vem antes do "para onde". */}
               {it.estrategia && estrategiaPorId[it.estrategia] && (
                 <div className="foco-estrat">
                   <span className="foco-estrat-num">{numeroDa(it.estrategia)}</span>
@@ -100,6 +90,16 @@ export default function FocoDia({ rows, briefing, ctx, options = [] }) {
                   </span>
                 </div>
               )}
+
+              <div className="foco-evo">
+                <span className={"temp-atual t-" + (TEMP_STYLE[it.de] || "none")}>
+                  {it.de ? label(it.de) : "sem temperatura"}
+                </span>
+                <span className="evo-seta">→</span>
+                <span className={"temp-alvo t-" + (TEMP_STYLE[it.para] || "none")}>
+                  {it.para ? label(it.para) : "definir evolução"}
+                </span>
+              </div>
 
               <div className="foco-rodape">
                 <span className={"date" + (r.next.none ? " none" : "")}>

@@ -131,6 +131,35 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
                 <span className="brief-val">{brl(n.amount)}</span>
               </div>
 
+              {/* Estratégia escolhida — o gestor pode trocar ao editar. */}
+              <div className="brief-estrat">
+                {editando ? (
+                  <div className="select-wrap">
+                    <select
+                      className="estrat-select"
+                      value={v.estrategia || ""}
+                      onChange={(e) =>
+                        setRascunho((r) => ({ ...r, [id]: { ...r[id], estrategia: e.target.value } }))
+                      }
+                    >
+                      <option value="">Escolher estratégia…</option>
+                      {(ESTRATEGIAS[plano.seg] || []).map((e) => (
+                        <option key={e.id} value={e.id} title={e.desc}>
+                          {numeroDa(e.id)}. {e.titulo}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : v.estrategia && estrategiaPorId[v.estrategia] ? (
+                  <span className="estrat-tag" title={estrategiaPorId[v.estrategia].desc}>
+                    <b>{numeroDa(v.estrategia)}</b>
+                    {estrategiaPorId[v.estrategia].titulo}
+                  </span>
+                ) : (
+                  <span className="estrat-falta">sem estratégia definida</span>
+                )}
+              </div>
+
               <div className="brief-evo">
                 <span className={"temp-atual t-" + (TEMP_STYLE[v.de] || "none")}>
                   {v.de ? label(v.de) : "sem temperatura"}
@@ -169,35 +198,6 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
                   >
                     ×
                   </button>
-                )}
-              </div>
-
-              {/* Estratégia escolhida — o gestor pode trocar ao editar. */}
-              <div className="brief-estrat">
-                {editando ? (
-                  <div className="select-wrap">
-                    <select
-                      className="estrat-select"
-                      value={v.estrategia || ""}
-                      onChange={(e) =>
-                        setRascunho((r) => ({ ...r, [id]: { ...r[id], estrategia: e.target.value } }))
-                      }
-                    >
-                      <option value="">Escolher estratégia…</option>
-                      {(ESTRATEGIAS[plano.seg] || []).map((e) => (
-                        <option key={e.id} value={e.id} title={e.desc}>
-                          {numeroDa(e.id)}. {e.titulo}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : v.estrategia && estrategiaPorId[v.estrategia] ? (
-                  <span className="estrat-tag" title={estrategiaPorId[v.estrategia].desc}>
-                    <b>{numeroDa(v.estrategia)}</b>
-                    {estrategiaPorId[v.estrategia].titulo}
-                  </span>
-                ) : (
-                  <span className="estrat-falta">sem estratégia definida</span>
                 )}
               </div>
 

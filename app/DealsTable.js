@@ -159,8 +159,8 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
               <th style={{ width: "18%" }}>Nome do negócio</th>
               <th style={{ width: "11%" }}>Etapa atual</th>
               <th style={{ width: "13%" }}>Próxima atividade</th>
-              <th style={{ width: "17%" }}>Evolução pretendida</th>
               <th style={{ width: "18%" }}>Estratégia</th>
+              <th style={{ width: "17%" }}>Evolução pretendida</th>
               <th style={{ width: "12%" }}>Observação</th>
             </tr>
           </thead>
@@ -203,6 +203,32 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                     </div>
                   </td>
                   <td>
+                    {/* Estratégia que o closer vai usar neste negócio hoje. */}
+                    {dentro && podeEditar ? (
+                      <div className="select-wrap">
+                        <select
+                          className="estrat-select"
+                          value={item.estrategia || ""}
+                          onChange={(e) => setEstrategia(r.id, e.target.value)}
+                        >
+                          <option value="">Escolher estratégia…</option>
+                          {estrategias.map((e) => (
+                            <option key={e.id} value={e.id} title={e.desc}>
+                              {numeroDa(e.id)}. {e.titulo}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : dentro && item.estrategia ? (
+                      <span className="estrat-tag" title={estrategias.find((e) => e.id === item.estrategia)?.desc}>
+                        <b>{numeroDa(item.estrategia)}</b>
+                        {estrategias.find((e) => e.id === item.estrategia)?.titulo || ""}
+                      </span>
+                    ) : (
+                      <span className="evo-vazio">—</span>
+                    )}
+                  </td>
+                  <td>
                     {/* Temperatura de hoje → para onde o closer pretende levar. */}
                     <div className="evo">
                       <span className={"temp-atual t-" + (TEMP_STYLE[r.temperatura] || "none")}>
@@ -230,32 +256,6 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                         <span className="evo-vazio">—</span>
                       )}
                     </div>
-                  </td>
-                  <td>
-                    {/* Estratégia que o closer vai usar neste negócio hoje. */}
-                    {dentro && podeEditar ? (
-                      <div className="select-wrap">
-                        <select
-                          className="estrat-select"
-                          value={item.estrategia || ""}
-                          onChange={(e) => setEstrategia(r.id, e.target.value)}
-                        >
-                          <option value="">Escolher estratégia…</option>
-                          {estrategias.map((e) => (
-                            <option key={e.id} value={e.id} title={e.desc}>
-                              {numeroDa(e.id)}. {e.titulo}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : dentro && item.estrategia ? (
-                      <span className="estrat-tag" title={estrategias.find((e) => e.id === item.estrategia)?.desc}>
-                        <b>{numeroDa(item.estrategia)}</b>
-                        {estrategias.find((e) => e.id === item.estrategia)?.titulo || ""}
-                      </span>
-                    ) : (
-                      <span className="evo-vazio">—</span>
-                    )}
                   </td>
                   <td>
                     <textarea
