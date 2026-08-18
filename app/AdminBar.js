@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AdminBar({ owners, selected, seg }) {
+export default function AdminBar({ owners, selected, seg, segs = ["B2B", "B2C"], papel = "Admin" }) {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -19,7 +19,7 @@ export default function AdminBar({ owners, selected, seg }) {
   return (
     <div className="bar">
       <div className="admin-controls">
-        <span className="admin-tag">Admin</span>
+        <span className="admin-tag">{papel}</span>
         <div className="select-wrap">
           <select
             className="closer-select"
@@ -34,8 +34,9 @@ export default function AdminBar({ owners, selected, seg }) {
             ))}
           </select>
         </div>
+        {segs.length > 1 && (
         <div className="seg-toggle">
-          {["B2B", "B2C"].map((val) => (
+          {segs.map((val) => (
             <button
               key={val}
               className={seg === val ? "on" : ""}
@@ -45,6 +46,7 @@ export default function AdminBar({ owners, selected, seg }) {
             </button>
           ))}
         </div>
+        )}
       </div>
     </div>
   );

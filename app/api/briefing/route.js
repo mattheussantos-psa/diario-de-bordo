@@ -2,10 +2,11 @@ import { auth } from "../../../auth";
 import { getOwnerByEmail, getDealsByIds } from "../../../lib/hubspot";
 import { saveBriefing, reviewBriefing, getBriefing, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
+import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
 
 // Closer só mexe no próprio briefing; admin mexe no de qualquer closer.
 async function resolveOwner(session, bodyOwnerId) {
-  if (session.user.isAdmin && bodyOwnerId) return String(bodyOwnerId);
+  if (bodyOwnerId && podeGerirCloser(session.user, bodyOwnerId)) return String(bodyOwnerId);
   const owner = await getOwnerByEmail(session.user.email.toLowerCase());
   return owner ? String(owner.ownerId) : null;
 }
@@ -28,13 +29,16 @@ function normalizar(items) {
 // Carregado sob demanda para não buscar dezenas de negócios de uma vez.
 export async function GET(req) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
-    return Response.json({ error: "Apenas admin." }, { status: 403 });
+  if (!ehGestor(session?.user)) {
+    return Response.json({ error: "Sem permissão." }, { status: 403 });
   }
   const { searchParams } = new URL(req.url);
   const ownerId = searchParams.get("owner");
   const dia = searchParams.get("dia");
   if (!ownerId || !dia) return Response.json({ error: "Informe closer e dia." }, { status: 400 });
+  if (!podeGerirCloser(session.user, ownerId)) {
+    return Response.json({ error: "Closer fora do seu time." }, { status: 403 });
+  }
 
   const briefing = await getBriefing(ownerId, dia);
   const ids = Object.keys(briefing?.items || {});
@@ -64,7 +68,7 @@ export async function POST(req) {
 
   const dia = body.dia || dayKey();
   // Admin ajustando preserva a situação; closer enviando manda para aprovação.
-  const status = body.manterStatus && session.user.isAdmin ? null : "enviado";
+  const status = body.manterStatus && ehGestor(session.user) ? null : "enviado";
 
   // Estratégia e evolução são obrigatórias: um briefing sem elas não diz nada
   // ao gestor. Validado aqui também, não só na tela.
@@ -91,13 +95,16 @@ export async function POST(req) {
 export async function PATCH(req) {
   const session = await auth();
   if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });
-  if (!session.user.isAdmin) return Response.json({ error: "Apenas admin aprova." }, { status: 403 });
+  if (!ehGestor(session.user)) return Response.json({ error: "Sem permissão para aprovar." }, { status: 403 });
   if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
   const { ownerId, status, motivo } = body;
   if (!ownerId || !["aprovado", "reprovado"].includes(status)) {
     return Response.json({ error: "Dados inválidos." }, { status: 400 });
+  }
+  if (!podeGerirCloser(session.user, ownerId)) {
+    return Response.json({ error: "Closer fora do seu time." }, { status: 403 });
   }
   if (status === "reprovado" && !String(motivo || "").trim()) {
     return Response.json({ error: "Motivo é obrigatório ao reprovar." }, { status: 400 });

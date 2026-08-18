@@ -6,6 +6,7 @@ import { getDayBriefings, getBriefingHistory, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, NOME_CLOSER, SEG_CLOSER, fotoDe } from "../../lib/config";
 import { seedDia } from "../../lib/seed";
+import { ehGestor, segmentosDe } from "../../lib/permissoes";
 import ApprovalCard from "../ApprovalCard";
 import HistLinha from "../HistLinha";
 
@@ -18,7 +19,7 @@ function initials(name) {
 export default async function Aprovacoes({ searchParams }) {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
-  if (!session.user.isAdmin) redirect("/");
+  if (!ehGestor(session.user)) redirect("/");
 
   const userName = session.user.name || session.user.email;
   const dia = dayKey();
@@ -36,8 +37,10 @@ export default async function Aprovacoes({ searchParams }) {
   const segOf = (id) => SEG_CLOSER[String(id)];
   const nomeDe = NOME_CLOSER;
 
+  // Líder enxerga apenas o time dele; admin, os dois segmentos.
+  const meusSegs = segmentosDe(session.user);
   const todos = plans
-    .filter((p) => segOf(p.ownerId))
+    .filter((p) => segOf(p.ownerId) && meusSegs.includes(segOf(p.ownerId)))
     .map((p) => ({ ...p, nome: nomeDe[p.ownerId] || `Closer ${p.ownerId}`, seg: segOf(p.ownerId), foto: fotoDe(p.ownerId) }));
 
   const pendentes = todos.filter((p) => p.status === "enviado");
@@ -55,7 +58,7 @@ export default async function Aprovacoes({ searchParams }) {
   const historico = isHistorico ? await getBriefingHistory(dia) : [];
   const porSemana = {};
   for (const h of historico) {
-    if (!segOf(h.ownerId)) continue;
+    if (!segOf(h.ownerId) || !meusSegs.includes(segOf(h.ownerId))) continue;
     (porSemana[h.dia] ||= []).push({ ...h, nome: nomeDe[h.ownerId] || `Closer ${h.ownerId}` });
   }
 

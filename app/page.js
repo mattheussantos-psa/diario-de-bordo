@@ -13,6 +13,7 @@ import Link from "next/link";
 import { getBriefing, getDayBriefings, dbReady } from "../lib/db";
 import { dayKey, dayLabel } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
+import { ehGestor, segmentosDe, podeGerirCloser } from "../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -57,8 +58,12 @@ export default async function Page({ searchParams }) {
   const email = session.user.email.toLowerCase();
   const userName = session.user.name || email;
   const isAdmin = !!session.user.isAdmin;
+  // Líder também gere briefings, porém só do time dele — e tem funil próprio.
+  const gestor = ehGestor(session.user);
+  const meusSegs = segmentosDe(session.user);
   // Sempre um segmento ativo: B2B é o padrão ao abrir o painel.
-  let seg = searchParams?.seg === "B2C" ? "B2C" : "B2B";
+  const segPedido = searchParams?.seg === "B2C" ? "B2C" : "B2B";
+  let seg = !gestor || meusSegs.includes(segPedido) ? segPedido : meusSegs[0] || "B2B";
 
   let viewOwner = null;
   let owners = [];
@@ -73,12 +78,13 @@ export default async function Page({ searchParams }) {
     erroHubspot = e;
   }
 
-  if (isAdmin) {
+  if (gestor) {
     // Lista fixa dos closers do segmento (evita varrer os owners do HubSpot).
     owners = CLOSERS[seg].map((c) => ({ ownerId: c.id, name: c.nome }));
-    const selId = searchParams?.closer || "";
-    // Seleção que não pertence ao segmento é descartada.
-    if (selId && owners.some((o) => String(o.ownerId) === String(selId))) {
+    // Líder é closer também: sem seleção, abre no próprio funil.
+    const proprio = !isAdmin ? await getOwnerByEmail(email).catch(() => null) : null;
+    const selId = searchParams?.closer || (proprio ? String(proprio.ownerId) : "");
+    if (selId && owners.some((o) => String(o.ownerId) === String(selId)) && podeGerirCloser(session.user, selId)) {
       const sel = owners.find((o) => String(o.ownerId) === String(selId));
       viewOwner = { ownerId: sel.ownerId, name: sel.name };
       try {
@@ -127,8 +133,11 @@ export default async function Page({ searchParams }) {
     if (view) q.set("view", view);
     return "/?" + q.toString();
   };
-  const pendentes = isAdmin
-    ? (await getDayBriefings(dia)).filter((b) => b.status === "enviado").length
+  // Pendentes que este gestor pode decidir.
+  const pendentes = gestor
+    ? (await getDayBriefings(dia)).filter(
+        (b) => b.status === "enviado" && podeGerirCloser(session.user, b.ownerId)
+      ).length
     : 0;
 
   const rows = deals.map((d) => ({
@@ -143,7 +152,7 @@ export default async function Page({ searchParams }) {
   const atrasadas = rows.filter((d) => d.next.pill?.cls === "late").length;
   const valor = rows.reduce((s, d) => s + (d.amount || 0), 0);
   // Foto do closer logado; admin sem funil próprio cai nas iniciais.
-  const avatar = !isAdmin && viewOwner ? fotoDe(viewOwner.ownerId) : null;
+  const avatar = viewOwner ? fotoDe(viewOwner.ownerId) : null;
 
   return (
     <div className="wrap">
@@ -165,7 +174,7 @@ export default async function Page({ searchParams }) {
         </div>
       </div>
 
-      {isAdmin ? (
+      {gestor ? (
         <>
           <div className="viewbar">
             <div className="viewtoggle">
@@ -176,7 +185,13 @@ export default async function Page({ searchParams }) {
               <Link href="/agenda">Agenda geral</Link>
             </div>
           </div>
-          <AdminBar owners={owners} selected={viewOwner ? String(viewOwner.ownerId) : ""} seg={seg} />
+          <AdminBar
+            owners={owners}
+            selected={viewOwner ? String(viewOwner.ownerId) : ""}
+            seg={seg}
+            segs={meusSegs}
+            papel={isAdmin ? "Admin" : "Líder " + seg}
+          />
         </>
       ) : (
         <div className="bar">
@@ -223,7 +238,7 @@ export default async function Page({ searchParams }) {
           ownerId: viewOwner ? String(viewOwner.ownerId) : "",
           dia,
           diaLabel: dayLabel(dia),
-          isAdmin,
+          isAdmin: gestor,
           dbReady: dbReady(),
         }}
       />

@@ -5,6 +5,7 @@ import { getDealsByIds } from "../../lib/hubspot";
 import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS, TEMP_STYLE, dealUrl, fotoDe } from "../../lib/config";
+import { ehGestor, segmentosDe } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -23,11 +24,14 @@ const STATUS_LABEL = {
 export default async function AgendaGeral({ searchParams }) {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
-  if (!session.user.isAdmin) redirect("/");
+  if (!ehGestor(session.user)) redirect("/");
 
   const userName = session.user.name || session.user.email;
   const dia = searchParams?.dia || dayKey();
-  const seg = searchParams?.seg === "B2C" ? "B2C" : "B2B";
+  // Líder fica restrito ao próprio segmento.
+  const meusSegs = segmentosDe(session.user);
+  const pedido = searchParams?.seg === "B2C" ? "B2C" : "B2B";
+  const seg = meusSegs.includes(pedido) ? pedido : meusSegs[0] || "B2B";
 
   const briefings = await getDayBriefings(dia);
   const porOwner = Object.fromEntries(briefings.map((b) => [String(b.ownerId), b]));
@@ -90,7 +94,7 @@ export default async function AgendaGeral({ searchParams }) {
           <Link href="/agenda" className="on">Agenda do dia</Link>
         </div>
         <div className="seg-toggle">
-          {["B2B", "B2C"].map((s) => (
+          {meusSegs.map((s) => (
             <Link key={s} href={`/agenda?seg=${s}`} className={seg === s ? "on" : ""}>{s}</Link>
           ))}
         </div>
