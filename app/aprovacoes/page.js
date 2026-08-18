@@ -7,6 +7,7 @@ import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, NOME_CLOSER, SEG_CLOSER, fotoDe } from "../../lib/config";
 import { seedDia } from "../../lib/seed";
 import ApprovalCard from "../ApprovalCard";
+import HistLinha from "../HistLinha";
 
 export const dynamic = "force-dynamic";
 
@@ -108,13 +109,7 @@ export default async function Aprovacoes({ searchParams }) {
                 <div className="hist-semana">{dayLabel(sem)}</div>
                 <div className="hist-linhas">
                   {planos.map((p) => (
-                    <div className={"hist-linha st-" + p.status} key={p.ownerId + sem}>
-                      <span className="hist-nome">{p.nome}</span>
-                      <span className="hist-n">{p.negocios} negócio{p.negocios === 1 ? "" : "s"}</span>
-                      <span className="plan-badge">{p.status === "aprovado" ? "Aprovado" : p.status === "reprovado" ? "Reprovado" : p.status === "enviado" ? "Não decidido" : "Não enviado"}</span>
-                      {p.revisadoPor && <span className="hist-por">por {p.revisadoPor}</span>}
-                      {p.motivo && <span className="hist-motivo">{p.motivo}</span>}
-                    </div>
+                    <HistLinha key={p.ownerId + sem} registro={p} />
                   ))}
                 </div>
               </div>

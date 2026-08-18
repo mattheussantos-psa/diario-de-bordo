@@ -264,12 +264,6 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .hist-semana { padding: 12px 18px; background: var(--surface-2); border-bottom: 1px solid var(--line);
   font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
 .hist-linhas { display: flex; flex-direction: column; }
-.hist-linha { display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--line);
-  font-size: 13px; flex-wrap: wrap; border-left: 3px solid transparent; }
-.hist-linha:last-child { border-bottom: 0; }
-.hist-linha.st-aprovado { border-left-color: #17803d; }
-.hist-linha.st-reprovado { border-left-color: var(--laranja); }
-.hist-linha.st-enviado { border-left-color: var(--azul); }
 .hist-nome { font-weight: 600; color: var(--ink); min-width: 190px; }
 .hist-n { color: var(--muted); font-variant-numeric: tabular-nums; }
 .hist-por { color: var(--muted); font-size: 12px; }
@@ -402,3 +396,32 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .estrat-select.falta, .act.falta select { border-color: var(--laranja); background: var(--laranja-soft); }
 .estrat-select.falta { color: var(--laranja); }
 tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--laranja); }
+
+/* Histórico expansível: clique abre o que foi aprovado naquele dia */
+.hist-item { border-bottom: 1px solid var(--line); border-left: 3px solid transparent; }
+.hist-item:last-child { border-bottom: 0; }
+.hist-item.st-aprovado { border-left-color: #17803d; }
+.hist-item.st-reprovado { border-left-color: var(--laranja); }
+.hist-item.st-enviado { border-left-color: var(--azul); }
+.hist-linha { display: flex; align-items: center; gap: 14px; padding: 12px 18px; width: 100%;
+  background: transparent; border: 0; font: inherit; font-size: 13px; text-align: left;
+  cursor: pointer; flex-wrap: wrap; transition: background .15s; }
+.hist-linha:hover { background: var(--surface-2); }
+.hist-seta { color: var(--muted); font-size: 16px; transition: transform .15s; flex: none; }
+.hist-seta.on { transform: rotate(90deg); }
+.hist-detalhe { padding: 4px 18px 16px 44px; display: flex; flex-direction: column; gap: 8px;
+  background: var(--surface-2); }
+.hist-detalhe-topo { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.hist-detalhe-topo b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.hist-carregando { font-size: 12.5px; color: var(--muted); padding: 8px 0; }
+.hist-neg { background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--line);
+  border-radius: 10px; padding: 10px 13px; }
+.hist-neg.v-fc { border-left-color: var(--azul); }
+.hist-neg.v-vv { border-left-color: var(--laranja); }
+.hist-neg.v-cl { border-left-color: #c98a4b; }
+.hist-neg.v-lm { border-left-color: var(--muted); }
+.hist-neg-nome { font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: none; }
+.hist-neg-nome:hover { color: var(--azul); }
+.hist-neg-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 7px; }
+.hist-neg-evo { display: flex; align-items: center; gap: 6px; }
+.hist-neg-val { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }

@@ -1,6 +1,6 @@
 import { auth } from "../../../auth";
-import { getOwnerByEmail } from "../../../lib/hubspot";
-import { saveBriefing, reviewBriefing, dbReady } from "../../../lib/db";
+import { getOwnerByEmail, getDealsByIds } from "../../../lib/hubspot";
+import { saveBriefing, reviewBriefing, getBriefing, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
 
 // Closer só mexe no próprio briefing; admin mexe no de qualquer closer.
@@ -22,6 +22,35 @@ function normalizar(items) {
     };
   }
   return out;
+}
+
+// Conteúdo de um briefing (usado ao expandir uma linha do histórico).
+// Carregado sob demanda para não buscar dezenas de negócios de uma vez.
+export async function GET(req) {
+  const session = await auth();
+  if (!session?.user?.isAdmin) {
+    return Response.json({ error: "Apenas admin." }, { status: 403 });
+  }
+  const { searchParams } = new URL(req.url);
+  const ownerId = searchParams.get("owner");
+  const dia = searchParams.get("dia");
+  if (!ownerId || !dia) return Response.json({ error: "Informe closer e dia." }, { status: 400 });
+
+  const briefing = await getBriefing(ownerId, dia);
+  const ids = Object.keys(briefing?.items || {});
+  const deals = ids.length ? await getDealsByIds(ids) : {};
+
+  return Response.json({
+    status: briefing?.status || "rascunho",
+    motivo: briefing?.motivo || "",
+    revisadoPor: briefing?.revisadoPor || "",
+    itens: ids.map((id) => ({
+      id,
+      nome: deals[id]?.name || `Negócio ${id}`,
+      valor: deals[id]?.amount ?? null,
+      ...briefing.items[id],
+    })),
+  });
 }
 
 export async function POST(req) {
