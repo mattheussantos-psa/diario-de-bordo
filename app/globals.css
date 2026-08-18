@@ -126,7 +126,11 @@ tbody tr:hover { background: var(--surface-2); }
 .plan-hint { color: var(--muted); font-size: 12px; font-style: italic; }
 
 /* Evolução pretendida: de (temperatura de hoje) → para (intenção do dia) */
-.evo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* Evolução na tabela: duas linhas rotuladas, alinhadas pela coluna do rótulo. */
+.evo { display: flex; flex-direction: column; gap: 6px; }
+.evo-linha { display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 8px; }
+.evo-lab { font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  color: var(--muted); text-align: right; }
 .evo-seta { color: var(--muted); font-size: 14px; }
 .evo-vazio { color: var(--line); }
 .temp-atual, .temp-alvo { font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 8px;
@@ -136,7 +140,9 @@ tbody tr:hover { background: var(--surface-2); }
 .temp-atual.t-cl, .temp-alvo.t-cl { background: #f4efe9; color: #a9702f; }
 .temp-atual.t-lm, .temp-alvo.t-lm { background: var(--ink-soft); color: var(--muted); }
 .temp-alvo { font-weight: 700; }
-.evo .act select { min-width: 150px; }
+.evo .act select { min-width: 0; width: 100%; padding-right: 28px; }
+.evo .temp-atual, .evo .temp-alvo { display: inline-block; max-width: 100%; overflow: hidden;
+  text-overflow: ellipsis; }
 
 /* Briefing no cartão de aprovação */
 .brief-lista { display: flex; flex-direction: column; gap: 10px; }

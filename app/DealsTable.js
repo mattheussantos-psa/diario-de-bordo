@@ -229,32 +229,38 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                     )}
                   </td>
                   <td>
-                    {/* Temperatura de hoje → para onde o closer pretende levar. */}
+                    {/* Empilhado com rótulos: na coluna estreita, a seta solta
+                        parecia quebra de linha acidental. */}
                     <div className="evo">
-                      <span className={"temp-atual t-" + (TEMP_STYLE[r.temperatura] || "none")}>
-                        {r.temperatura ? label(r.temperatura) : "sem temperatura"}
-                      </span>
-                      <span className="evo-seta">→</span>
-                      {dentro && podeEditar ? (
-                        <div className="act" data-v={TEMP_STYLE[item.para] || ""}>
-                          <select value={item.para} onChange={(e) => setPara(r.id, e.target.value)}>
-                            <option value="">Levar para…</option>
-                            {options
-                              .filter((o) => o.value !== r.temperatura)
-                              .map((o) => (
-                                <option key={o.value} value={o.value}>
-                                  {o.label}
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-                      ) : dentro ? (
-                        <span className={"temp-alvo t-" + (TEMP_STYLE[item.para] || "none")}>
-                          {item.para ? label(item.para) : "—"}
+                      <div className="evo-linha">
+                        <span className="evo-lab">de</span>
+                        <span className={"temp-atual t-" + (TEMP_STYLE[r.temperatura] || "none")}>
+                          {r.temperatura ? label(r.temperatura) : "sem temperatura"}
                         </span>
-                      ) : (
-                        <span className="evo-vazio">—</span>
-                      )}
+                      </div>
+                      <div className="evo-linha">
+                        <span className="evo-lab">para</span>
+                        {dentro && podeEditar ? (
+                          <div className="act" data-v={TEMP_STYLE[item.para] || ""}>
+                            <select value={item.para} onChange={(e) => setPara(r.id, e.target.value)}>
+                              <option value="">definir…</option>
+                              {options
+                                .filter((o) => o.value !== r.temperatura)
+                                .map((o) => (
+                                  <option key={o.value} value={o.value}>
+                                    {o.label}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                        ) : dentro && item.para ? (
+                          <span className={"temp-alvo t-" + (TEMP_STYLE[item.para] || "none")}>
+                            {label(item.para)}
+                          </span>
+                        ) : (
+                          <span className="evo-vazio">—</span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td>
