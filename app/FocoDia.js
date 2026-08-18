@@ -1,4 +1,5 @@
 import { TEMP_STYLE, dealUrl } from "../lib/config";
+import { estrategiaPorId, numeroDa } from "../lib/estrategias";
 
 const brl = (n) => (n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 }));
 
@@ -25,6 +26,7 @@ export default function FocoDia({ rows, briefing, ctx, options = [] }) {
   const valor = doDia.reduce((s, r) => s + (r.amount || 0), 0);
   const atrasados = doDia.filter((r) => r.next.pill?.cls === "late").length;
   const semAlvo = doDia.filter((r) => !items[r.id]?.para).length;
+  const semEstrategia = doDia.filter((r) => !items[r.id]?.estrategia).length;
 
   if (doDia.length === 0) {
     return (
@@ -52,6 +54,7 @@ export default function FocoDia({ rows, briefing, ctx, options = [] }) {
           <span><b>{brl(valor)}</b> em jogo</span>
           {atrasados > 0 && <span className="foco-alerta"><b>{atrasados}</b> com atividade atrasada</span>}
           {semAlvo > 0 && <span className="foco-alerta"><b>{semAlvo}</b> sem evolução definida</span>}
+          {semEstrategia > 0 && <span className="foco-alerta"><b>{semEstrategia}</b> sem estratégia</span>}
         </div>
       </div>
 
@@ -86,6 +89,17 @@ export default function FocoDia({ rows, briefing, ctx, options = [] }) {
                   {it.para ? label(it.para) : "definir evolução"}
                 </span>
               </div>
+
+              {/* A estratégia é o "como" — vem logo abaixo do "para onde". */}
+              {it.estrategia && estrategiaPorId[it.estrategia] && (
+                <div className="foco-estrat">
+                  <span className="foco-estrat-num">{numeroDa(it.estrategia)}</span>
+                  <span>
+                    <b>{estrategiaPorId[it.estrategia].titulo}</b>
+                    <span className="foco-estrat-desc">{estrategiaPorId[it.estrategia].desc}</span>
+                  </span>
+                </div>
+              )}
 
               <div className="foco-rodape">
                 <span className={"date" + (r.next.none ? " none" : "")}>

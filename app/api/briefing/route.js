@@ -18,6 +18,7 @@ function normalizar(items) {
     out[String(id)] = {
       de: typeof v?.de === "string" ? v.de : "",
       para: typeof v?.para === "string" ? v.para : "",
+      estrategia: typeof v?.estrategia === "string" ? v.estrategia : "",
     };
   }
   return out;

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { TEMP_STYLE } from "../lib/config";
+import { ESTRATEGIAS, numeroDa } from "../lib/estrategias";
 
 const STATUS_LABEL = {
   rascunho: "Rascunho",
@@ -10,7 +11,8 @@ const STATUS_LABEL = {
   reprovado: "Reprovado",
 };
 
-export default function DealsTable({ deals, options, closerName, emptyLabel, briefing, ctx }) {
+export default function DealsTable({ deals, options, closerName, emptyLabel, briefing, ctx, seg = "B2B" }) {
+  const estrategias = ESTRATEGIAS[seg] || [];
   const [rows, setRows] = useState(() => deals.map((d) => ({ ...d, _obs: d.observacoes })));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -47,7 +49,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
       const next = { ...it };
       if (r.id in next) delete next[r.id];
       // "de" congela a temperatura de hoje; "para" o closer escolhe.
-      else next[r.id] = { de: r.temperatura || "", para: "" };
+      else next[r.id] = { de: r.temperatura || "", para: "", estrategia: "" };
       return next;
     });
     setBriefMsg(null);
@@ -55,6 +57,11 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
 
   function setPara(id, para) {
     setItems((it) => ({ ...it, [id]: { ...it[id], para } }));
+    setBriefMsg(null);
+  }
+
+  function setEstrategia(id, estrategia) {
+    setItems((it) => ({ ...it, [id]: { ...it[id], estrategia } }));
     setBriefMsg(null);
   }
 
@@ -149,11 +156,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
           <thead>
             <tr>
               {podeEditar && <th style={{ width: "11%" }}>Atuar hoje</th>}
-              <th style={{ width: "21%" }}>Nome do negócio</th>
-              <th style={{ width: "13%" }}>Etapa atual</th>
-              <th style={{ width: "14%" }}>Próxima atividade</th>
-              <th style={{ width: "22%" }}>Evolução pretendida</th>
-              <th style={{ width: "19%" }}>Observação</th>
+              <th style={{ width: "18%" }}>Nome do negócio</th>
+              <th style={{ width: "11%" }}>Etapa atual</th>
+              <th style={{ width: "13%" }}>Próxima atividade</th>
+              <th style={{ width: "17%" }}>Evolução pretendida</th>
+              <th style={{ width: "18%" }}>Estratégia</th>
+              <th style={{ width: "12%" }}>Observação</th>
             </tr>
           </thead>
           <tbody>
@@ -224,6 +232,32 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                     </div>
                   </td>
                   <td>
+                    {/* Estratégia que o closer vai usar neste negócio hoje. */}
+                    {dentro && podeEditar ? (
+                      <div className="select-wrap">
+                        <select
+                          className="estrat-select"
+                          value={item.estrategia || ""}
+                          onChange={(e) => setEstrategia(r.id, e.target.value)}
+                        >
+                          <option value="">Escolher estratégia…</option>
+                          {estrategias.map((e) => (
+                            <option key={e.id} value={e.id} title={e.desc}>
+                              {numeroDa(e.id)}. {e.titulo}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : dentro && item.estrategia ? (
+                      <span className="estrat-tag" title={estrategias.find((e) => e.id === item.estrategia)?.desc}>
+                        <b>{numeroDa(item.estrategia)}</b>
+                        {estrategias.find((e) => e.id === item.estrategia)?.titulo || ""}
+                      </span>
+                    ) : (
+                      <span className="evo-vazio">—</span>
+                    )}
+                  </td>
+                  <td>
                     <textarea
                       className="obs"
                       placeholder="Escrever observação…"
@@ -240,7 +274,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={podeEditar ? 6 : 5} style={{ textAlign: "center", color: "var(--muted)", padding: "40px" }}>
+                <td colSpan={podeEditar ? 7 : 6} style={{ textAlign: "center", color: "var(--muted)", padding: "40px" }}>
                   {emptyLabel || "Nenhum negócio ativo no funil."}
                 </td>
               </tr>

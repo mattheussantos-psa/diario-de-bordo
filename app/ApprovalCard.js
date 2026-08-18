@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TEMP_STYLE, dealUrl } from "../lib/config";
 import { formatNextActivity } from "../lib/activity";
+import { ESTRATEGIAS, estrategiaPorId, numeroDa } from "../lib/estrategias";
 
 const STATUS_LABEL = {
   rascunho: "Rascunho",
@@ -168,6 +169,35 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
                   >
                     ×
                   </button>
+                )}
+              </div>
+
+              {/* Estratégia escolhida — o gestor pode trocar ao editar. */}
+              <div className="brief-estrat">
+                {editando ? (
+                  <div className="select-wrap">
+                    <select
+                      className="estrat-select"
+                      value={v.estrategia || ""}
+                      onChange={(e) =>
+                        setRascunho((r) => ({ ...r, [id]: { ...r[id], estrategia: e.target.value } }))
+                      }
+                    >
+                      <option value="">Escolher estratégia…</option>
+                      {(ESTRATEGIAS[plano.seg] || []).map((e) => (
+                        <option key={e.id} value={e.id} title={e.desc}>
+                          {numeroDa(e.id)}. {e.titulo}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : v.estrategia && estrategiaPorId[v.estrategia] ? (
+                  <span className="estrat-tag" title={estrategiaPorId[v.estrategia].desc}>
+                    <b>{numeroDa(v.estrategia)}</b>
+                    {estrategiaPorId[v.estrategia].titulo}
+                  </span>
+                ) : (
+                  <span className="estrat-falta">sem estratégia definida</span>
                 )}
               </div>
 

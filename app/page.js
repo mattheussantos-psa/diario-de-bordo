@@ -205,6 +205,7 @@ export default async function Page({ searchParams }) {
           rows={rows}
           briefing={briefing}
           options={tempOptions}
+          seg={seg}
           ctx={{ diaLabel: dayLabel(dia) }}
         />
       ) : (
@@ -217,6 +218,7 @@ export default async function Page({ searchParams }) {
         closerName={viewOwner ? viewOwner.name : ""}
         emptyLabel={isAdmin && !viewOwner ? "Selecione um closer acima para ver o diário." : "Nenhum negócio ativo no funil."}
         briefing={briefing}
+        seg={seg}
         ctx={{
           ownerId: viewOwner ? String(viewOwner.ownerId) : "",
           dia,
