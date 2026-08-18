@@ -4,7 +4,7 @@ import { estrategiaPorId, numeroDa } from "../lib/estrategias";
 const brl = (n) => (n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 }));
 
 const STATUS = {
-  rascunho: { txt: "Ainda não enviado", cls: "rascunho" },
+  rascunho: { txt: "Não enviado", cls: "rascunho" },
   enviado: { txt: "Aguardando aprovação", cls: "enviado" },
   aprovado: { txt: "Aprovado", cls: "aprovado" },
   reprovado: { txt: "Reprovado", cls: "reprovado" },

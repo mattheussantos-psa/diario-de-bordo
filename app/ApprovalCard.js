@@ -7,7 +7,7 @@ import { formatNextActivity } from "../lib/activity";
 import { ESTRATEGIAS, estrategiaPorId, numeroDa } from "../lib/estrategias";
 
 const STATUS_LABEL = {
-  rascunho: "Rascunho",
+  rascunho: "Não enviado",
   enviado: "Aguardando aprovação",
   aprovado: "Aprovado",
   reprovado: "Reprovado",

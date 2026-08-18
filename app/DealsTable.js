@@ -5,7 +5,7 @@ import { TEMP_STYLE } from "../lib/config";
 import { ESTRATEGIAS, numeroDa } from "../lib/estrategias";
 
 const STATUS_LABEL = {
-  rascunho: "Rascunho",
+  rascunho: "Não enviado",
   enviado: "Aguardando aprovação",
   aprovado: "Aprovado",
   reprovado: "Reprovado",

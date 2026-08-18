@@ -111,7 +111,7 @@ export default async function Aprovacoes({ searchParams }) {
                     <div className={"hist-linha st-" + p.status} key={p.ownerId + sem}>
                       <span className="hist-nome">{p.nome}</span>
                       <span className="hist-n">{p.negocios} negócio{p.negocios === 1 ? "" : "s"}</span>
-                      <span className="plan-badge">{p.status === "aprovado" ? "Aprovado" : p.status === "reprovado" ? "Reprovado" : p.status === "enviado" ? "Não decidido" : "Rascunho"}</span>
+                      <span className="plan-badge">{p.status === "aprovado" ? "Aprovado" : p.status === "reprovado" ? "Reprovado" : p.status === "enviado" ? "Não decidido" : "Não enviado"}</span>
                       {p.revisadoPor && <span className="hist-por">por {p.revisadoPor}</span>}
                       {p.motivo && <span className="hist-motivo">{p.motivo}</span>}
                     </div>
