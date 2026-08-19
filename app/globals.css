@@ -472,3 +472,32 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
   font-size: 18px; line-height: 1; cursor: pointer; padding: 0 4px; border-radius: 6px; }
 .busca-x:hover { color: var(--ink); background: var(--ink-soft); }
 .busca-res { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Briefing do dia anterior, para consulta */
+.ontem { background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--muted);
+  border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+.ontem.st-aprovado { border-left-color: #17803d; }
+.ontem.st-reprovado { border-left-color: var(--laranja); }
+.ontem-head { display: flex; align-items: center; gap: 12px; width: 100%; background: transparent;
+  border: 0; font: inherit; font-size: 13px; text-align: left; padding: 12px 18px; cursor: pointer;
+  flex-wrap: wrap; transition: background .15s; }
+.ontem-head:hover { background: var(--surface-2); }
+.ontem-lab { font-size: 10.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+.ontem-dia { font-weight: 700; color: var(--ink); }
+.ontem-meta { color: var(--muted); font-variant-numeric: tabular-nums; }
+.ontem-meta b { color: var(--ink); }
+.ontem-lista { display: flex; flex-direction: column; gap: 8px; padding: 4px 18px 16px 40px; background: var(--surface-2); }
+.ontem-item { display: flex; flex-direction: column; gap: 6px; text-decoration: none;
+  background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--line);
+  border-radius: 10px; padding: 10px 13px; transition: .15s; }
+.ontem-item:hover { box-shadow: var(--shadow); }
+.ontem-item.v-fc { border-left-color: var(--azul); }
+.ontem-item.v-vv { border-left-color: var(--laranja); }
+.ontem-item.v-cl { border-left-color: #c98a4b; }
+.ontem-item.v-lm { border-left-color: var(--muted); }
+.ontem-nome { font-size: 13px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ontem-fora { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+  background: var(--ink-soft); color: var(--muted); padding: 2px 7px; border-radius: 999px; }
+.ontem-linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ontem-evo { display: flex; align-items: center; gap: 6px; }
+.ontem-val { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }

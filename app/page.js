@@ -9,9 +9,11 @@ import { fotoDe, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES, CLOSERS, SEG_CLOSER 
 import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
 import FocoDia from "./FocoDia";
+import Ontem from "./Ontem";
 import Link from "next/link";
 import { getBriefing, getDayBriefings, dbReady } from "../lib/db";
-import { dayKey, dayLabel } from "../lib/week";
+import { getDealsByIds } from "../lib/hubspot";
+import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 import { ehGestor, segmentosDe, podeGerirCloser } from "../lib/permissoes";
 
@@ -129,6 +131,10 @@ export default async function Page({ searchParams }) {
   const briefing = viewOwner ? await getBriefing(viewOwner.ownerId, dia) : null;
   const isFoco = searchParams?.view === "foco";
 
+  // Briefing do último dia útil, para o closer retomar de onde parou.
+  const diaAnterior = diaUtilAnterior(dia);
+  const anterior = viewOwner ? await getBriefing(viewOwner.ownerId, diaAnterior) : null;
+
   // Preserva closer/segmento ao alternar a visão.
   const qs = (view) => {
     const q = new URLSearchParams();
@@ -151,6 +157,28 @@ export default async function Page({ searchParams }) {
     adv: /avanç/i.test(d.stageLabel),
     url: dealUrl(d.id),
   }));
+
+  // Negócios do dia anterior: aproveita o que já veio no funil de hoje e só
+  // consulta o HubSpot pelos que saíram dele (ganho, perdido ou reatribuído).
+  let ontem = null;
+  if (anterior && Object.keys(anterior.items).length > 0) {
+    const porId = Object.fromEntries(rows.map((r) => [String(r.id), r]));
+    const ausentes = Object.keys(anterior.items).filter((id) => !porId[id]);
+    const extras = ausentes.length ? await getDealsByIds(ausentes).catch(() => ({})) : {};
+    ontem = {
+      diaLabel: dayLabel(diaAnterior),
+      status: anterior.status,
+      motivo: anterior.motivo,
+      itens: Object.entries(anterior.items).map(([id, v]) => ({
+        id,
+        url: dealUrl(id),
+        nome: porId[id]?.name || extras[id]?.name || `Negócio ${id}`,
+        valor: porId[id]?.amount ?? extras[id]?.amount ?? null,
+        foraDoFunil: !porId[id],
+        ...v,
+      })),
+    };
+  }
 
   const hoje = rows.filter((d) => d.next.pill?.cls === "today").length;
   const atrasadas = rows.filter((d) => d.next.pill?.cls === "late").length;
@@ -209,6 +237,8 @@ export default async function Page({ searchParams }) {
         <div className="kpi"><div className="lab">Atrasadas</div><div className="val o">{atrasadas}</div><div className="sub">próxima atividade vencida</div></div>
         <div className="kpi"><div className="lab">Valor no funil</div><div className="val">{brl(valor)}</div><div className="sub">soma dos negócios abertos</div></div>
       </div>
+
+      {viewOwner && ontem && <Ontem ontem={ontem} />}
 
       {viewOwner && (
         <div className="viewbar">
