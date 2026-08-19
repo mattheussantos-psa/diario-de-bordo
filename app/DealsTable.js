@@ -39,9 +39,23 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
     return [...rows].sort((a, b) => (dentro(a) === dentro(b) ? 0 : dentro(a) ? -1 : 1));
   }, [rows, items, status]);
 
-  const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
+  // Busca por nome do negócio ou etapa, ignorando acento e caixa.
+  const [busca, setBusca] = useState("");
+  const norm = (s) =>
+    String(s || "")
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
+
+  const filtrados = useMemo(() => {
+    const q = norm(busca).trim();
+    if (!q) return ordered;
+    return ordered.filter((r) => norm(r.name).includes(q) || norm(r.stageLabel).includes(q));
+  }, [ordered, busca]);
+
+  const pageCount = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
   const pageSafe = Math.min(page, pageCount - 1);
-  const visible = ordered.slice(pageSafe * PAGE_SIZE, pageSafe * PAGE_SIZE + PAGE_SIZE);
+  const visible = filtrados.slice(pageSafe * PAGE_SIZE, pageSafe * PAGE_SIZE + PAGE_SIZE);
 
   const dirty = useMemo(() => rows.filter((r) => r._obs !== r.observacoes), [rows]);
 
@@ -189,6 +203,33 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
         </div>
       )}
 
+      <div className="busca-bar">
+        <div className="busca">
+          <span className="busca-lupa">⌕</span>
+          <input
+            type="search"
+            placeholder="Buscar negócio ou etapa…"
+            value={busca}
+            onChange={(e) => {
+              setBusca(e.target.value);
+              setPage(0);
+            }}
+          />
+          {busca && (
+            <button className="busca-x" onClick={() => { setBusca(""); setPage(0); }} title="Limpar">
+              ×
+            </button>
+          )}
+        </div>
+        {busca && (
+          <span className="busca-res">
+            {filtrados.length === 0
+              ? "nenhum negócio encontrado"
+              : `${filtrados.length} de ${ordered.length} negócios`}
+          </span>
+        )}
+      </div>
+
       <div className="tscroll">
         <table>
           <thead>
@@ -316,10 +357,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                 </tr>
               );
             })}
-            {rows.length === 0 && (
+            {visible.length === 0 && (
               <tr>
                 <td colSpan={podeEditar ? 7 : 6} style={{ textAlign: "center", color: "var(--muted)", padding: "40px" }}>
-                  {emptyLabel || "Nenhum negócio ativo no funil."}
+                  {rows.length === 0
+                    ? emptyLabel || "Nenhum negócio ativo no funil."
+                    : `Nenhum negócio encontrado para “${busca}”.`}
                 </td>
               </tr>
             )}
