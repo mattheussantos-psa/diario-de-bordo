@@ -321,15 +321,16 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                         <span className="evo-lab">para</span>
                         {dentro && podeEditar ? (
                           <div className={"act" + (!item.para ? " falta" : "")} data-v={TEMP_STYLE[item.para] || ""}>
+                            {/* A temperatura atual continua na lista: manter é uma
+                                decisão válida — atuar sem mudar de patamar. */}
                             <select value={item.para} onChange={(e) => setPara(r.id, e.target.value)}>
                               <option value="">definir…</option>
-                              {options
-                                .filter((o) => o.value !== r.temperatura)
-                                .map((o) => (
-                                  <option key={o.value} value={o.value}>
-                                    {o.label}
-                                  </option>
-                                ))}
+                              {options.map((o) => (
+                                <option key={o.value} value={o.value}>
+                                  {o.label}
+                                  {o.value === r.temperatura ? " (manter)" : ""}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         ) : dentro && item.para ? (

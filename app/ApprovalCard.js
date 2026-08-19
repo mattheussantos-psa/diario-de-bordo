@@ -187,7 +187,10 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
                     >
                       <option value="">Levar para…</option>
                       {options.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                          {o.value === v.de ? " (manter)" : ""}
+                        </option>
                       ))}
                     </select>
                   </div>
