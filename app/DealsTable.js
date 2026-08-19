@@ -168,6 +168,9 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
             <span className="plan-badge">{STATUS_LABEL[status]}</span>
             <span className="plan-week">{ctx.diaLabel}</span>
             <span className="plan-count"><b>{total}</b> negócio{total === 1 ? "" : "s"} para hoje</span>
+            {total === 0 && (
+              <span className="plan-motivo">marque ao menos um negócio</span>
+            )}
             {incompletos.length > 0 && (
               <span className="plan-motivo">
                 {incompletos.length} sem estratégia ou evolução
@@ -182,9 +185,11 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
             <button
               className="btn-primary"
               onClick={enviarBriefing}
-              disabled={briefBusy || incompletos.length > 0 || (!isAdmin && total === 0)}
+              disabled={briefBusy || total === 0 || incompletos.length > 0}
               title={
-                incompletos.length > 0
+                total === 0
+                  ? "Marque ao menos um negócio para atuar hoje"
+                  : incompletos.length > 0
                   ? "Defina estratégia e evolução em todos os negócios marcados"
                   : undefined
               }

@@ -73,6 +73,16 @@ export async function POST(req) {
   // Estratégia e evolução são obrigatórias: um briefing sem elas não diz nada
   // ao gestor. Validado aqui também, não só na tela.
   const items = normalizar(body.items);
+
+  // Briefing sem nenhum negócio não é briefing: com a lista vazia, a checagem
+  // de campos obrigatórios abaixo não acusa nada e o envio passava zerado.
+  if (Object.keys(items).length === 0) {
+    return Response.json(
+      { error: "Marque ao menos um negócio para atuar hoje." },
+      { status: 400 }
+    );
+  }
+
   const incompletos = Object.values(items).filter((v) => !v.para || !v.estrategia).length;
   if (incompletos > 0) {
     return Response.json(

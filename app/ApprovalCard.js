@@ -61,6 +61,10 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
   }
 
   async function salvarEdicao() {
+    if (Object.keys(rascunho).length === 0) {
+      setMsg({ ok: false, text: "O briefing precisa de ao menos um negócio." });
+      return;
+    }
     const faltando = Object.values(rascunho).filter((v) => !v.para || !v.estrategia).length;
     if (faltando > 0) {
       setMsg({ ok: false, text: `${faltando} negócio(s) sem estratégia ou evolução.` });
