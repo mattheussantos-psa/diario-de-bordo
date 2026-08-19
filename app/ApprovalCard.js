@@ -29,8 +29,15 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
   const [rascunho, setRascunho] = useState({ ...plano.items });
   const [catalogo, setCatalogo] = useState(null);
 
+  // Com vários briefings na fila, listar tudo de cada um torna a tela
+  // impraticável: mostra os primeiros e abre o resto sob demanda.
+  const [verTudo, setVerTudo] = useState(false);
+  const PREVIA = 3;
+
   const itens = editando ? rascunho : plano.items;
   const entries = Object.entries(itens);
+  const visiveis = editando || verTudo ? entries : entries.slice(0, PREVIA);
+  const ocultos = entries.length - visiveis.length;
 
   const info = (id) =>
     deals[id] || catalogo?.find((d) => String(d.id) === String(id)) || { id, name: `Negócio ${id}` };
@@ -124,7 +131,7 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
 
       <div className="brief-lista">
         {entries.length === 0 && <div className="aprov-vazio">Nenhum negócio no briefing.</div>}
-        {entries.map(([id, v]) => {
+        {visiveis.map(([id, v]) => {
           const n = info(id);
           const at = formatNextActivity(n.nextActivity);
           return (
@@ -216,6 +223,16 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
             </div>
           );
         })}
+        {ocultos > 0 && (
+          <button className="ver-mais" onClick={() => setVerTudo(true)}>
+            ver os outros {ocultos} negócio{ocultos === 1 ? "" : "s"}
+          </button>
+        )}
+        {verTudo && !editando && entries.length > PREVIA && (
+          <button className="ver-mais" onClick={() => setVerTudo(false)}>
+            recolher
+          </button>
+        )}
       </div>
 
       {editando && (
