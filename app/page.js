@@ -41,13 +41,25 @@ function brl(n) {
 
 // Aviso claro quando a API do HubSpot recusa (cota diária é o caso mais comum).
 function ErroHubspot({ erro }) {
-  const cota = /429|daily limit/i.test(String(erro?.message || ""));
+  // Dois 429 bem diferentes: o diário só volta amanhã, o por segundo passa
+  // na hora. Chamar os dois de "limite diário" mandava todo mundo embora.
+  const msg = String(erro?.message || "");
+  const diario = /DAILY/i.test(msg);
+  const rajada = !diario && /429|SECONDLY|RATE_LIMIT/i.test(msg);
   return (
     <div className="empty">
-      <h2>{cota ? "Limite diário do HubSpot atingido" : "HubSpot indisponível"}</h2>
+      <h2>
+        {diario
+          ? "Limite diário do HubSpot atingido"
+          : rajada
+          ? "HubSpot recusou por excesso de chamadas"
+          : "HubSpot indisponível"}
+      </h2>
       <p>
-        {cota
+        {diario
           ? "A conta atingiu o limite de chamadas à API do HubSpot por hoje. Os dados voltam assim que a cota renovar (no início do próximo dia)."
+          : rajada
+          ? "Foram muitas chamadas em pouco tempo. Atualize a página — esse limite libera em segundos."
           : "Não foi possível falar com o HubSpot agora. Tente novamente em alguns minutos."}
       </p>
     </div>

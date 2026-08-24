@@ -91,21 +91,23 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
     setSaving(true);
     setMsg(null);
     try {
-      await Promise.all(
-        dirty.map((r) =>
-          fetch(`/api/deals/${r.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ observacoes: r._obs }),
-          }).then((res) => {
-            if (!res.ok) throw new Error();
-          })
-        )
-      );
+      // Um de cada vez: disparar tudo junto virava uma rajada que o
+      // HubSpot recusa por limite de chamadas por segundo.
+      for (const r of dirty) {
+        const res = await fetch(`/api/deals/${r.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ observacoes: r._obs }),
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          throw new Error(d.error || `Falha ao salvar "${r.name}".`);
+        }
+      }
       setRows((rs) => rs.map((r) => ({ ...r, observacoes: r._obs })));
       setMsg({ ok: true, text: "Observações salvas no HubSpot ✓" });
-    } catch {
-      setMsg({ ok: false, text: "Erro ao salvar. Tente de novo." });
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || "Erro ao salvar. Tente de novo." });
     } finally {
       setSaving(false);
     }

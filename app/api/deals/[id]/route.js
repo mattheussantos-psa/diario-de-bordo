@@ -1,6 +1,5 @@
 import { auth } from "../../../../auth";
-import { getOwnerByEmail, getOpenDeals, updateDeal } from "../../../../lib/hubspot";
-import { CLOSER_PIPELINES } from "../../../../lib/config";
+import { getOwnerByEmail, getDealOwner, updateDeal } from "../../../../lib/hubspot";
 
 export async function PATCH(req, { params }) {
   const session = await auth();
@@ -12,12 +11,15 @@ export async function PATCH(req, { params }) {
   const body = await req.json().catch(() => ({}));
 
   // Um closer só edita os próprios negócios; admin edita qualquer um.
-  // ponytail: refaz a busca por PATCH em vez de cachear — ok no volume atual (dezenas de negócios).
+  // A checagem lê o dono deste negócio, e só dele: varrer o funil inteiro a
+  // cada PATCH usava a busca do HubSpot, limitada a poucas chamadas por
+  // segundo — salvar várias observações de uma vez estourava o limite e
+  // derrubava os salvamentos com 429.
   if (!session.user.isAdmin) {
     const owner = await getOwnerByEmail(session.user.email.toLowerCase());
     if (!owner) return Response.json({ error: "Closer não encontrado no HubSpot." }, { status: 403 });
-    const deals = await getOpenDeals(owner.ownerId, Object.keys(CLOSER_PIPELINES));
-    if (!deals.some((d) => d.id === id)) {
+    const dono = await getDealOwner(id);
+    if (String(dono) !== String(owner.ownerId)) {
       return Response.json({ error: "Negócio não pertence a você." }, { status: 403 });
     }
   }
