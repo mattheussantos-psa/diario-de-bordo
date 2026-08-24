@@ -78,12 +78,15 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ownerId: plano.ownerId, dia, items: rascunho, manterStatus: true }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || `Falha (HTTP ${res.status}).`);
+      }
       setEditando(false);
       setMsg({ ok: true, text: "Briefing atualizado ✓" });
       router.refresh();
-    } catch {
-      setMsg({ ok: false, text: "Erro ao salvar." });
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || "Erro ao salvar." });
     } finally {
       setBusy(false);
     }
@@ -102,13 +105,16 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ownerId: plano.ownerId, dia, status: novo, motivo }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || `Falha (HTTP ${res.status}).`);
+      }
       setStatus(novo);
       setAbrirReprova(false);
       setMsg({ ok: true, text: novo === "aprovado" ? "Aprovado ✓" : "Reprovado ✓" });
       router.refresh();
-    } catch {
-      setMsg({ ok: false, text: "Erro ao registrar." });
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || "Erro ao registrar." });
     } finally {
       setBusy(false);
     }

@@ -120,15 +120,20 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ownerId: ctx.ownerId, dia: ctx.dia, items, manterStatus: isAdmin }),
       });
-      if (!res.ok) throw new Error();
+      // A causa vem do servidor: sem isso a tela dizia só "erro" e ninguém
+      // conseguia relatar o que aconteceu.
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || `Falha ao enviar (HTTP ${res.status}).`);
+      }
       // Rascunho vira "enviado" também quando o gestor monta pelo closer.
       if (status === "rascunho") setStatus("enviado");
       setBriefMsg({
         ok: true,
         text: status === "rascunho" ? "Enviado para aprovação ✓" : "Briefing atualizado ✓",
       });
-    } catch {
-      setBriefMsg({ ok: false, text: "Erro ao enviar o briefing." });
+    } catch (e) {
+      setBriefMsg({ ok: false, text: e.message || "Erro ao enviar o briefing." });
     } finally {
       setBriefBusy(false);
     }

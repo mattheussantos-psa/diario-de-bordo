@@ -5,10 +5,21 @@ import { dayKey } from "../../../lib/week";
 import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
 
 // Closer só mexe no próprio briefing; admin mexe no de qualquer closer.
+// O closer sempre cai na consulta ao HubSpot: se ela falhar (cota diária),
+// o envio inteiro morria em 500 sem dizer o motivo a ninguém.
 async function resolveOwner(session, bodyOwnerId) {
   if (bodyOwnerId && podeGerirCloser(session.user, bodyOwnerId)) return String(bodyOwnerId);
-  const owner = await getOwnerByEmail(session.user.email.toLowerCase());
-  return owner ? String(owner.ownerId) : null;
+  try {
+    const owner = await getOwnerByEmail(session.user.email.toLowerCase());
+    return owner ? String(owner.ownerId) : null;
+  } catch (e) {
+    console.error("[briefing] HubSpot falhou ao identificar o closer:", e);
+    throw new Error(
+      /429|daily limit/i.test(String(e?.message))
+        ? "Limite diário do HubSpot atingido — o envio não pôde ser identificado. Tente de novo mais tarde."
+        : "Não foi possível falar com o HubSpot para identificar você."
+    );
+  }
 }
 
 // Aceita { [dealId]: { de, para } } e descarta qualquer coisa fora do formato.
@@ -63,7 +74,12 @@ export async function POST(req) {
   if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
-  const ownerId = await resolveOwner(session, body.ownerId);
+  let ownerId;
+  try {
+    ownerId = await resolveOwner(session, body.ownerId);
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 503 });
+  }
   if (!ownerId) return Response.json({ error: "Closer não encontrado." }, { status: 403 });
 
   const dia = body.dia || dayKey();
