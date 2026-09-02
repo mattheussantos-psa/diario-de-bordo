@@ -61,6 +61,8 @@ body {
 
 .card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
 .tscroll { overflow-x: auto; }
+.col-atuar { width: 11%; }
+.col-obs { width: 12%; }
 table { width: 100%; border-collapse: collapse; min-width: 1400px; }
 thead th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); padding: 14px 18px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
 tbody td { padding: 15px 18px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
@@ -501,3 +503,30 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .ontem-linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .ontem-evo { display: flex; align-items: center; gap: 6px; }
 .ontem-val { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Notebook (1100–1500px): sem isto a tabela ficava presa em 1400px e a
+   coluna de observação caía fora da tela. Aperta o respiro e deixa as
+   colunas encolherem, em vez de forçar rolagem lateral. */
+@media (max-width: 1500px) {
+  .wrap { padding: 22px 20px 56px; }
+  table { min-width: 1080px; }
+  thead th, tbody td { padding: 12px 12px; }
+  .obs { min-width: 0; }
+  .act select { min-width: 0; width: 100%; }
+  .closer-select { min-width: 200px; }
+  /* o checkbox não precisa de 11% da tabela; a observação é escrita à mão. */
+  .col-atuar { width: 84px; }
+  .col-obs { width: 17%; }
+  .kpi { padding: 14px 15px; }
+  .kpi .val { font-size: 31px; }
+  .title { font-size: 26px; }
+}
+
+/* Abaixo de 1100px a tabela não cabe de jeito nenhum: aí a rolagem lateral
+   é a saída honesta, e o resto do painel passa a empilhar. */
+@media (max-width: 1100px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .planbar, .foco-topo { flex-direction: column; align-items: flex-start; }
+  .planbar-actions { width: 100%; justify-content: flex-end; }
+  .who-name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

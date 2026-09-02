@@ -246,13 +246,13 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
         <table>
           <thead>
             <tr>
-              {podeEditar && <th style={{ width: "11%" }}>Atuar hoje</th>}
+              {podeEditar && <th className="col-atuar">Atuar hoje</th>}
               <th style={{ width: "18%" }}>Nome do negócio</th>
               <th style={{ width: "11%" }}>Etapa atual</th>
               <th style={{ width: "13%" }}>Próxima atividade</th>
               <th style={{ width: "18%" }}>Estratégia</th>
               <th style={{ width: "17%" }}>Evolução pretendida</th>
-              <th style={{ width: "12%" }}>Observação</th>
+              <th className="col-obs">Observação</th>
             </tr>
           </thead>
           <tbody>
