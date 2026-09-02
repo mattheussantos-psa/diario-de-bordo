@@ -4,8 +4,8 @@ import { auth, signOut } from "../../auth";
 import { getDealsByIds } from "../../lib/hubspot";
 import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
-import { CLOSERS, TEMP_STYLE, dealUrl, fotoDe } from "../../lib/config";
-import { ehGestor, segmentosDe } from "../../lib/permissoes";
+import { CLOSERS, SEG_CLOSER, TEMP_STYLE, dealUrl, fotoDe } from "../../lib/config";
+import { ehGestor, segmentosDe, podeGerirCloser } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +59,16 @@ export default async function AgendaGeral({ searchParams }) {
   const comBriefing = time.filter((c) => c.peso < 4);
   const semBriefing = time.filter((c) => c.peso === 4);
 
+  // A agenda é montada por time, então quem enviou sem estar no cadastro não
+  // caberia em coluna nenhuma. Em vez de desaparecer, vira um aviso: o cartão
+  // dele existe e pode ser decidido em Aprovações.
+  const foraDoCadastro = briefings.filter(
+    (b) =>
+      !SEG_CLOSER[String(b.ownerId)] &&
+      Object.keys(b.items).length > 0 &&
+      podeGerirCloser(session.user, b.ownerId)
+  ).length;
+
   const ids = briefings.flatMap((b) => Object.keys(b.items));
   const dealsById = ids.length ? await getDealsByIds(ids) : {};
 
@@ -101,6 +111,14 @@ export default async function AgendaGeral({ searchParams }) {
       </div>
 
       {!dbReady() && <div className="card"><div className="cal-empty">Banco não configurado.</div></div>}
+
+      {foraDoCadastro > 0 && (
+        <div className="aprov-motivo">
+          {foraDoCadastro} briefing{foraDoCadastro === 1 ? "" : "s"} de closer sem time cadastrado —
+          não aparece{foraDoCadastro === 1 ? "" : "m"} nesta grade.{" "}
+          <Link href="/aprovacoes">Ver em Aprovações</Link>
+        </div>
+      )}
 
       {dbReady() && semBriefing.length > 0 && (
         <div className="sem-briefing">

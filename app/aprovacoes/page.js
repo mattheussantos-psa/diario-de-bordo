@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
-import { getDealsByIds, getTemperaturaOptions } from "../../lib/hubspot";
+import { getDealsByIds, getTemperaturaOptions, getOwnerNames } from "../../lib/hubspot";
 import { getDayBriefings, getBriefingHistory, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, NOME_CLOSER, SEG_CLOSER, fotoDe } from "../../lib/config";
 import { seedDia } from "../../lib/seed";
-import { ehGestor, segmentosDe } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, briefingsGeriveis, podeGerirCloser } from "../../lib/permissoes";
 import ApprovalCard from "../ApprovalCard";
 import HistLinha from "../HistLinha";
 
@@ -37,11 +37,20 @@ export default async function Aprovacoes({ searchParams }) {
   const segOf = (id) => SEG_CLOSER[String(id)];
   const nomeDe = NOME_CLOSER;
 
-  // Líder enxerga apenas o time dele; admin, os dois segmentos.
+  // Líder enxerga apenas o time dele; admin, os dois segmentos. A mesma regra
+  // do contador da home: exigir cadastro aqui escondia briefings que o número
+  // contava, e ninguém conseguia aprová-los.
   const meusSegs = segmentosDe(session.user);
-  const todos = plans
-    .filter((p) => segOf(p.ownerId) && meusSegs.includes(segOf(p.ownerId)))
-    .map((p) => ({ ...p, nome: nomeDe[p.ownerId] || `Closer ${p.ownerId}`, seg: segOf(p.ownerId), foto: fotoDe(p.ownerId) }));
+  const visiveis = briefingsGeriveis(session.user, plans);
+  // Quem enviou sem estar no cadastro: nome vem do HubSpot só para esses.
+  const semCadastro = visiveis.filter((p) => !segOf(p.ownerId)).map((p) => p.ownerId);
+  const nomesHub = semCadastro.length ? await getOwnerNames(semCadastro).catch(() => ({})) : {};
+  const todos = visiveis.map((p) => ({
+    ...p,
+    nome: nomeDe[p.ownerId] || nomesHub[p.ownerId] || `Closer ${p.ownerId}`,
+    seg: segOf(p.ownerId) || null,
+    foto: fotoDe(p.ownerId),
+  }));
 
   const pendentes = todos.filter((p) => p.status === "enviado");
   const decididos = todos.filter((p) => p.status === "aprovado" || p.status === "reprovado");
@@ -58,7 +67,7 @@ export default async function Aprovacoes({ searchParams }) {
   const historico = isHistorico ? await getBriefingHistory(dia) : [];
   const porSemana = {};
   for (const h of historico) {
-    if (!segOf(h.ownerId) || !meusSegs.includes(segOf(h.ownerId))) continue;
+    if (!podeGerirCloser(session.user, h.ownerId)) continue;
     (porSemana[h.dia] ||= []).push({ ...h, nome: nomeDe[h.ownerId] || `Closer ${h.ownerId}` });
   }
 

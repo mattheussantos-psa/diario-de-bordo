@@ -130,7 +130,8 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
             {plano.foto ? <img src={plano.foto} alt={plano.nome} /> : plano.nome.slice(0, 2).toUpperCase()}
           </span>
           <span className="aprov-nome">{plano.nome}</span>
-          <span className="aprov-seg">{plano.seg}</span>
+          {/* Sem time cadastrado o cartão aparecia sem contexto nenhum. */}
+          <span className="aprov-seg">{plano.seg || "sem time cadastrado"}</span>
           <span className="plan-badge">{STATUS_LABEL[status]}</span>
         </div>
         <div className="aprov-resumo">

@@ -15,7 +15,7 @@ import { getBriefing, getDayBriefings, dbReady } from "../lib/db";
 import { getDealsByIds } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
-import { ehGestor, segmentosDe, podeGerirCloser } from "../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis } from "../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -157,8 +157,8 @@ export default async function Page({ searchParams }) {
   };
   // Pendentes que este gestor pode decidir.
   const pendentes = gestor
-    ? (await getDayBriefings(dia)).filter(
-        (b) => b.status === "enviado" && podeGerirCloser(session.user, b.ownerId)
+    ? briefingsGeriveis(session.user, await getDayBriefings(dia)).filter(
+        (b) => b.status === "enviado"
       ).length
     : 0;
 
