@@ -1,6 +1,6 @@
 import { auth } from "../../../auth";
 import { getOpenDeals } from "../../../lib/hubspot";
-import { CLOSERS_BY_SEG } from "../../../lib/config";
+import { CLOSERS_BY_SEG, PIPELINES_POR_SEG } from "../../../lib/config";
 import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
 
 // Negócios ativos de um closer — usado pelo gestor ao adicionar negócios a um plano.
@@ -18,7 +18,7 @@ export async function GET(req) {
   const seg = Object.keys(CLOSERS_BY_SEG).find((s) =>
     CLOSERS_BY_SEG[s].includes(String(ownerId))
   );
-  const pipelines = seg === "B2C" ? ["725182862"] : ["default"];
+  const pipelines = PIPELINES_POR_SEG[seg] || PIPELINES_POR_SEG.B2B;
 
   const deals = await getOpenDeals(ownerId, pipelines, { withTasks: false });
   return Response.json({

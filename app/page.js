@@ -5,7 +5,7 @@ import {
   getOpenDeals,
   getTemperaturaOptions,
 } from "../lib/hubspot";
-import { fotoDe, dealUrl, CLOSERS_BY_SEG, CLOSER_PIPELINES, CLOSERS, SEG_CLOSER } from "../lib/config";
+import { fotoDe, dealUrl, CLOSERS_BY_SEG, CLOSERS, SEG_CLOSER, SEGMENTOS, PIPELINES_POR_SEG } from "../lib/config";
 import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
 import FocoDia from "./FocoDia";
@@ -24,10 +24,9 @@ function segOf(ownerId) {
   return SEG_CLOSER[String(ownerId)];
 }
 
+// Funil de cada segmento vem do cadastro: Farmer compartilha o funil do B2B.
 function pipelinesForSeg(seg) {
-  if (seg === "B2B") return ["default"];
-  if (seg === "B2C") return ["725182862"];
-  return Object.keys(CLOSER_PIPELINES);
+  return PIPELINES_POR_SEG[seg] || PIPELINES_POR_SEG.B2B;
 }
 
 function initials(name) {
@@ -76,7 +75,7 @@ export default async function Page({ searchParams }) {
   const gestor = ehGestor(session.user);
   const meusSegs = segmentosDe(session.user);
   // Sempre um segmento ativo: B2B é o padrão ao abrir o painel.
-  const segPedido = searchParams?.seg === "B2C" ? "B2C" : "B2B";
+  const segPedido = SEGMENTOS.includes(searchParams?.seg) ? searchParams.seg : "B2B";
   let seg = !gestor || meusSegs.includes(segPedido) ? segPedido : meusSegs[0] || "B2B";
 
   let viewOwner = null;
@@ -96,7 +95,7 @@ export default async function Page({ searchParams }) {
 
   if (gestor) {
     // Lista fixa dos closers do segmento (evita varrer os owners do HubSpot).
-    owners = CLOSERS[seg].map((c) => ({ ownerId: c.id, name: c.nome }));
+    owners = (CLOSERS[seg] || []).map((c) => ({ ownerId: c.id, name: c.nome }));
     // Líder é closer também: sem seleção, abre no próprio funil.
     const proprio = !isAdmin ? await getOwnerByEmail(email).catch(() => null) : null;
     meuOwnerId = proprio?.ownerId || null;

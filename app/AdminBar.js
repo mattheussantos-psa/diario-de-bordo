@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AdminBar({ owners, selected, seg, segs = ["B2B", "B2C"], papel = "Admin" }) {
+export default function AdminBar({ owners, selected, seg, segs = [], papel = "Admin" }) {
   const router = useRouter();
   const sp = useSearchParams();
 

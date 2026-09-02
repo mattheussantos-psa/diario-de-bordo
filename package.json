@@ -5,7 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "node lib/week.check.mjs"
+    "check": "node lib/week.check.mjs && node lib/config.check.mjs"
   },
   "dependencies": {
     "next": "^14.2.5",

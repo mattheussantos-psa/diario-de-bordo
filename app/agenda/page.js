@@ -4,7 +4,7 @@ import { auth, signOut } from "../../auth";
 import { getDealsByIds } from "../../lib/hubspot";
 import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
-import { CLOSERS, SEG_CLOSER, TEMP_STYLE, dealUrl, fotoDe } from "../../lib/config";
+import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe } from "../../lib/config";
 import { ehGestor, segmentosDe, podeGerirCloser } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export default async function AgendaGeral({ searchParams }) {
   const dia = searchParams?.dia || dayKey();
   // Líder fica restrito ao próprio segmento.
   const meusSegs = segmentosDe(session.user);
-  const pedido = searchParams?.seg === "B2C" ? "B2C" : "B2B";
+  const pedido = SEGMENTOS.includes(searchParams?.seg) ? searchParams.seg : "B2B";
   const seg = meusSegs.includes(pedido) ? pedido : meusSegs[0] || "B2B";
 
   const briefings = await getDayBriefings(dia);
@@ -40,7 +40,7 @@ export default async function AgendaGeral({ searchParams }) {
   // Ordem por urgência para o gestor: o que espera decisão primeiro, quem não
   // enviou por último. Dentro do mesmo grupo, mantém a ordem do cadastro.
   const PESO = { enviado: 0, reprovado: 1, aprovado: 2, rascunho: 3 };
-  const time = CLOSERS[seg]
+  const time = (CLOSERS[seg] || [])
     .map((c, i) => {
       const briefing = porOwner[c.id] || null;
       const temItens = briefing && Object.keys(briefing.items).length > 0;
