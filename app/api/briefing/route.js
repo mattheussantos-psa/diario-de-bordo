@@ -1,5 +1,6 @@
 import { auth } from "../../../auth";
-import { getOwnerByEmail, getDealsByIds, updateDeal } from "../../../lib/hubspot";
+import { getOwnerByEmail, getDealsByIds, updateDeal, temPropriedadeDeal } from "../../../lib/hubspot";
+import { rotuloDa } from "../../../lib/estrategias";
 import { saveBriefing, reviewBriefing, getBriefing, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
 import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
@@ -147,19 +148,23 @@ export async function PATCH(req) {
   const briefing = await getBriefing(String(ownerId), dia);
   const alvos = Object.entries(briefing?.items || {}).filter(([, v]) => v.para);
 
+  // A estratégia só vai junto se a propriedade já existir na conta.
+  const gravaEstrategia = await temPropriedadeDeal("estrategia_do_dia");
+
   // Um de cada vez: rajada de escrita é o que derrubou os salvamentos antes.
   let aplicados = 0;
   const falhas = [];
   for (const [dealId, v] of alvos) {
     try {
-      await updateDeal(dealId, { temperatura_atual: v.para });
+      const patch = { temperatura_atual: v.para };
+      if (gravaEstrategia && v.estrategia) patch.estrategia_do_dia = rotuloDa(v.estrategia);
+      await updateDeal(dealId, patch);
       aplicados++;
     } catch (e) {
-      console.error(`[briefing] falha ao gravar temperatura do negócio ${dealId}:`, e);
+      console.error(`[briefing] falha ao gravar o negócio ${dealId}:`, e);
       falhas.push(dealId);
     }
   }
 
   return Response.json({ ok: true, aplicados, falhas });
-  return Response.json({ ok: true });
 }
