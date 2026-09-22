@@ -24,8 +24,9 @@ export async function PATCH(req, { params }) {
     }
   }
 
-  // Só a observação vai para o HubSpot. A evolução é intenção do briefing e
-  // não altera temperatura_atual — quem move a temperatura é o closer no CRM.
+  // Aqui vai só a observação. A temperatura não é escrita neste ponto: a
+  // evolução pretendida chega ao HubSpot quando o gestor aprova o briefing
+  // (ver o PATCH em /api/briefing).
   const patch = {};
   if (typeof body.observacoes === "string") patch.observacoes = body.observacoes;
   if (Object.keys(patch).length === 0) {

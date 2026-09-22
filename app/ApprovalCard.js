@@ -109,9 +109,25 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error || `Falha (HTTP ${res.status}).`);
       }
+      const d = await res.json().catch(() => ({}));
       setStatus(novo);
       setAbrirReprova(false);
-      setMsg({ ok: true, text: novo === "aprovado" ? "Aprovado ✓" : "Reprovado ✓" });
+      // O gestor precisa saber o que foi de fato gravado no HubSpot.
+      if (novo === "aprovado") {
+        const n = d.aplicados || 0;
+        const falhas = d.falhas?.length || 0;
+        setMsg({
+          ok: falhas === 0,
+          text:
+            "Aprovado ✓ · " +
+            n +
+            (n === 1 ? " negócio atualizado" : " negócios atualizados") +
+            " no HubSpot" +
+            (falhas ? " · " + falhas + " não gravou, veja os logs" : ""),
+        });
+      } else {
+        setMsg({ ok: true, text: "Reprovado ✓" });
+      }
       router.refresh();
     } catch (e) {
       setMsg({ ok: false, text: e.message || "Erro ao registrar." });

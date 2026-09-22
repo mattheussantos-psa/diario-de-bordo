@@ -1,5 +1,5 @@
 import { auth } from "../../../auth";
-import { getOwnerByEmail, getDealsByIds } from "../../../lib/hubspot";
+import { getOwnerByEmail, getDealsByIds, updateDeal } from "../../../lib/hubspot";
 import { saveBriefing, reviewBriefing, getBriefing, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
 import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
@@ -136,6 +136,30 @@ export async function PATCH(req) {
     return Response.json({ error: "Motivo é obrigatório ao reprovar." }, { status: 400 });
   }
 
-  await reviewBriefing(String(ownerId), body.dia || dayKey(), status, motivo, session.user.name || session.user.email);
+  const dia = body.dia || dayKey();
+  await reviewBriefing(String(ownerId), dia, status, motivo, session.user.name || session.user.email);
+
+  // Aprovado, a evolução pretendida deixa de ser só intenção e vai para o
+  // HubSpot: a temperatura de cada negócio do briefing passa a ser o "PARA".
+  // Só na aprovação — reprovar não toca no CRM.
+  if (status !== "aprovado") return Response.json({ ok: true });
+
+  const briefing = await getBriefing(String(ownerId), dia);
+  const alvos = Object.entries(briefing?.items || {}).filter(([, v]) => v.para);
+
+  // Um de cada vez: rajada de escrita é o que derrubou os salvamentos antes.
+  let aplicados = 0;
+  const falhas = [];
+  for (const [dealId, v] of alvos) {
+    try {
+      await updateDeal(dealId, { temperatura_atual: v.para });
+      aplicados++;
+    } catch (e) {
+      console.error(`[briefing] falha ao gravar temperatura do negócio ${dealId}:`, e);
+      falhas.push(dealId);
+    }
+  }
+
+  return Response.json({ ok: true, aplicados, falhas });
   return Response.json({ ok: true });
 }
