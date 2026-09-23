@@ -11,7 +11,7 @@ import { atividadeDoDia } from "../../lib/atividade";
 import { aplicarAtividade } from "../../lib/db";
 import { situacaoDoDia, placarDoDia, montaHistorico, precisaAuxilio } from "../../lib/carteira";
 import AgendaFarmers from "../AgendaFarmers";
-import { ehGestor, segmentosDe, podeGerirCloser, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, podeVerTramitacoes, equipeLiderada, podeVerEvolucao } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -165,7 +165,7 @@ export default async function AgendaGeral({ searchParams }) {
           <Link href="/">Diário de bordo</Link>
           <Link href="/aprovacoes">Aprovações</Link>
           <Link href="/agenda" className="on">Agenda do dia</Link>
-          <Link href="/evolucao">Evolução</Link>
+          {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
           {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
         </div>
         <div className="seg-toggle">

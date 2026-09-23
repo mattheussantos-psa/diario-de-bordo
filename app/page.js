@@ -18,7 +18,7 @@ import { getBriefing, getDayBriefings, getFechamento, dbReady } from "../lib/db"
 import { getDealsByIds } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
-import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada } from "../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao } from "../lib/permissoes";
 import { listaDoDia } from "../lib/dia-farmer";
 import { resumoDoMes } from "../lib/metricas-farmer";
 import { atividadeDoDia } from "../lib/atividade";
@@ -314,7 +314,7 @@ export default async function Page({ searchParams }) {
                 Aprovações{pendentes > 0 ? ` (${pendentes})` : ""}
               </Link>
               <Link href="/agenda">Agenda geral</Link>
-              <Link href="/evolucao">Evolução</Link>
+              {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
               {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
             </div>
           </div>

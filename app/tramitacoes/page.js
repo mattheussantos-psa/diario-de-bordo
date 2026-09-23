@@ -5,7 +5,7 @@ import { getTicketsCS, getOwnerByEmail, getOwnerNames } from "../../lib/hubspot"
 import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
-import { ehGestor, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
+import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao } from "../../lib/permissoes";
 import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPAS_TICKET, pendenciasDoTicket, TIPOS } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
@@ -127,7 +127,7 @@ export default async function Tramitacoes({ searchParams }) {
           <Link href="/">Diário de bordo</Link>
           {gestor && <Link href="/aprovacoes">Aprovações</Link>}
           {gestor && <Link href="/agenda">Agenda geral</Link>}
-          {gestor && <Link href="/evolucao">Evolução</Link>}
+          {gestor && podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
           <Link href="/ajuda">Como funciona</Link>
           <Link href="/tramitacoes" className="on">
             Tramitações{abertas.length ? ` (${abertas.length})` : ""}

@@ -1,22 +1,15 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
-import { getEvolucao, getEvolucaoCarteira, dbReady } from "../../lib/db";
+import { getEvolucaoCarteira, dbReady } from "../../lib/db";
 import { dayKey, dayLabel, ultimosDiasUteis } from "../../lib/week";
 import { NOME_CLOSER, SEG_CLOSER, SEGMENTOS, EQUIPES_DE, closersDe, fotoDe, SEG_TRAMITACOES } from "../../lib/config";
-import { ehGestor, segmentosDe, podeGerirCloser, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, podeVerTramitacoes, equipeLiderada, podeVerEvolucao } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
-// O vocabulário muda com o segmento: closer atua em negócio, farmer aborda
-// empresa. As faixas somam o compromisso nos dois casos.
-const FAIXAS_CLOSER = [
-  { id: "efetivo", label: "Contato efetivo", cls: "ef" },
-  { id: "tentativa", label: "Tentei, sem sucesso", cls: "te" },
-  { id: "nao_atuei", label: "Não atuei", cls: "na" },
-  { id: "sem_registro", label: "Sem registro", cls: "sr" },
-];
-const FAIXAS_FARMER = [
+// As quatro faixas somam as empresas do compromisso do dia.
+const FAIXAS = [
   { id: "efetivo", label: "Contato efetivo", cls: "ef" },
   { id: "tentativa", label: "Tentei, sem sucesso", cls: "te" },
   { id: "nao_abordei", label: "Não abordei", cls: "na" },
@@ -33,26 +26,20 @@ export default async function Evolucao({ searchParams }) {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
   if (!ehGestor(session.user)) redirect("/");
+  // A Evolução mede empresas da carteira: sem alcance ao time de CS não há o
+  // que mostrar, e uma tela vazia parece defeito.
+  if (!podeVerEvolucao(session.user)) redirect("/");
 
   const userName = session.user.name || session.user.email;
   const meusSegs = segmentosDe(session.user);
-  const seg = SEGMENTOS.includes(searchParams?.seg) && meusSegs.includes(searchParams.seg)
-    ? searchParams.seg
-    : meusSegs[0] || "B2B";
+  // Não há seletor de segmento: a carteira é do time de CS e ponto.
+  const seg = SEG_TRAMITACOES;
   const eqLider = equipeLiderada(session.user);
   const equipeTravada = eqLider && eqLider.seg === seg ? eqLider.equipe : "";
   const equipe = equipeTravada || searchParams?.equipe || "";
 
-  const ehFarmer = seg === SEG_TRAMITACOES;
-  const FAIXAS = ehFarmer ? FAIXAS_FARMER : FAIXAS_CLOSER;
-
   const dias = ultimosDiasUteis(10);
-  // O farmer trabalha empresas da carteira; o closer, negócios do funil.
-  const linhas = ehFarmer
-    ? await getEvolucaoCarteira(dias, closersDe(seg, equipe).map((c) => c.id))
-    : (await getEvolucao(dias)).filter(
-        (l) => SEG_CLOSER[l.ownerId] === seg && podeGerirCloser(session.user, l.ownerId)
-      );
+  const linhas = await getEvolucaoCarteira(dias, closersDe(seg, equipe).map((c) => c.id));
 
   // Só os closers da equipe escolhida entram na conta.
   const daEquipe = new Set(closersDe(seg, equipe).map((c) => c.id));
@@ -124,11 +111,6 @@ export default async function Evolucao({ searchParams }) {
           <Link href="/evolucao" className="on">Evolução</Link>
           {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
         </div>
-        <div className="seg-toggle">
-          {meusSegs.map((s) => (
-            <Link key={s} href={`/evolucao?seg=${s}`} className={seg === s ? "on" : ""}>{s}</Link>
-          ))}
-        </div>
         {!equipeTravada && EQUIPES_DE(seg).length > 0 && (
           <div className="seg-toggle">
             <Link href={qs({ equipe: "" })} className={equipe ? "" : "on"}>Todas</Link>
@@ -144,7 +126,7 @@ export default async function Evolucao({ searchParams }) {
       {dbReady() && total.marcados === 0 ? (
         <div className="card">
           <div className="cal-empty">
-            {ehFarmer ? "Nenhuma empresa setada" : "Nenhum negócio marcado"} nos últimos {dias.length} dias úteis neste recorte.
+            Nenhuma empresa setada nos últimos {dias.length} dias úteis neste recorte.
           </div>
         </div>
       ) : (
@@ -153,7 +135,7 @@ export default async function Evolucao({ searchParams }) {
             <div className="kpi">
               <div className="lab">Contato efetivo</div>
               <div className="val a">{pct(total.efetivo, total.marcados)}%</div>
-              <div className="sub">sobre {total.marcados} {ehFarmer ? "empresas setadas" : "negócios marcados"}</div>
+              <div className="sub">sobre {total.marcados} empresas setadas</div>
             </div>
             <div className="kpi">
               <div className="lab">Sobre os registrados</div>
@@ -166,7 +148,7 @@ export default async function Evolucao({ searchParams }) {
               <div className="sub">{total.sem_registro} negócios sem fechamento</div>
             </div>
             <div className="kpi">
-              <div className="lab">{ehFarmer ? "Empresas setadas" : "Negócios marcados"}</div>
+              <div className="lab">Empresas setadas</div>
               <div className="val">{total.marcados}</div>
               <div className="sub">no período, neste recorte</div>
             </div>
