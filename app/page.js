@@ -10,8 +10,9 @@ import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
 import FocoDia from "./FocoDia";
 import Ontem from "./Ontem";
+import Fechamento from "./Fechamento";
 import Link from "next/link";
-import { getBriefing, getDayBriefings, dbReady } from "../lib/db";
+import { getBriefing, getDayBriefings, getFechamento, dbReady } from "../lib/db";
 import { getDealsByIds } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
@@ -142,6 +143,9 @@ export default async function Page({ searchParams }) {
   const dia = dayKey();
   const briefing = viewOwner ? await getBriefing(viewOwner.ownerId, dia) : null;
   const isFoco = searchParams?.view === "foco";
+  const isFechar = searchParams?.view === "fechar";
+  // O fechamento só faz sentido depois de existir briefing.
+  const fechamento = viewOwner && isFechar ? await getFechamento(viewOwner.ownerId, dia) : {};
 
   // Briefing do último dia útil, para o closer retomar de onde parou.
   const diaAnterior = diaUtilAnterior(dia);
@@ -259,13 +263,25 @@ export default async function Page({ searchParams }) {
       {viewOwner && (
         <div className="viewbar">
           <div className="viewtoggle">
-            <Link href={qs("")} className={isFoco ? "" : "on"}>Tabela</Link>
+            <Link href={qs("")} className={isFoco || isFechar ? "" : "on"}>Tabela</Link>
             <Link href={qs("foco")} className={isFoco ? "on" : ""}>Meu dia</Link>
+            <Link href={qs("fechar")} className={isFechar ? "on" : ""}>Fechamento</Link>
           </div>
         </div>
       )}
 
-      {isFoco ? (
+      {isFechar ? (
+        <Fechamento
+          rows={rows}
+          briefing={briefing}
+          fechamento={fechamento}
+          ctx={{
+            ownerId: viewOwner ? String(viewOwner.ownerId) : "",
+            dia,
+            diaLabel: dayLabel(dia),
+          }}
+        />
+      ) : isFoco ? (
         <FocoDia
           rows={rows}
           briefing={briefing}

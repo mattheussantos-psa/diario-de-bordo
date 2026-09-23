@@ -530,3 +530,26 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
   .planbar-actions { width: 100%; justify-content: flex-end; }
   .who-name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+
+/* ------------------------------------------------------------ fechamento */
+.fech-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px;
+  border-top: 3px solid var(--line); }
+.fech-card.fechado { border-top-color: #17803d; background: var(--surface-2); }
+.fech-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.fech-plano { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--surface-2); border-radius: 10px; padding: 9px 11px; }
+.fech-evo { display: inline-flex; align-items: center; gap: 7px; }
+.fech-opcoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.fech-op { border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 8px 13px; border-radius: 999px;
+  cursor: pointer; transition: .15s; }
+.fech-op:hover { border-color: var(--muted); color: var(--ink); }
+.fech-op.on.ok { background: #e8f6ed; border-color: #9ed5b4; color: #17803d; }
+.fech-op.on.meio { background: var(--laranja-soft); border-color: #f6cdb4; color: var(--laranja); }
+.fech-op.on.nao { background: var(--ink-soft); border-color: #d3d7de; color: var(--ink); }
+.fech-obs { display: flex; flex-direction: column; gap: 8px; }
+.fech-rodape { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.fech-falta { color: var(--laranja); font-size: 12px; font-weight: 600; margin-right: auto; }
+.fech-ok { color: #17803d; font-size: 12px; font-weight: 600; margin-right: auto; }
+.fech-opcional { color: var(--muted); font-size: 12px; margin-right: auto; }
