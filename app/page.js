@@ -21,6 +21,7 @@ import { formatNextActivity } from "../lib/activity";
 import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada } from "../lib/permissoes";
 import { listaDoDia } from "../lib/dia-farmer";
 import { resumoDoMes } from "../lib/metricas-farmer";
+import { atividadeDoDia } from "../lib/atividade";
 import { montaHistorico, precisaAuxilio, placarDoDia } from "../lib/carteira";
 import { getHistoricoCarteira } from "../lib/db";
 import { SEG_TRAMITACOES, empresaUrl } from "../lib/config";
@@ -150,6 +151,9 @@ export default async function Page({ searchParams }) {
     }
   }
 
+  const isFechar = searchParams?.view === "fechar";
+  const isFoco = searchParams?.view === "foco";
+
   // Farmer trabalha empresas da própria carteira, não negócios do funil.
   const ehFarmer = seg === SEG_TRAMITACOES;
   let carteiraDoDia = null;
@@ -167,11 +171,21 @@ export default async function Page({ searchParams }) {
         console.error("[carteira] resumo do mês falhou:", err?.message);
         return null;
       });
+      // O que o CRM já sabe do dia: vira sugestão de resultado no fechamento.
+      // Falha aqui (escopo, cota) só faz o farmer preencher à mão.
+      const ativ = isFechar
+        ? (await atividadeDoDia([String(viewOwner.ownerId)], dayKey()).catch((err) => {
+            console.error("[carteira] atividade do dia falhou:", err?.message);
+            return {};
+          }))[String(viewOwner.ownerId)] || {}
+        : {};
+
       carteiraDoDia = itens.map((e) => ({
         ...e,
         url: empresaUrl(e.id),
         historico: historico.get(String(e.id)) || null,
         precisaAuxilio: precisaAuxilio(historico.get(String(e.id))),
+        atividade: ativ[String(e.id)] || null,
       }));
     } catch (e) {
       console.error("[carteira] falha ao montar o dia:", e);
@@ -183,8 +197,6 @@ export default async function Page({ searchParams }) {
 
   const dia = dayKey();
   const briefing = viewOwner ? await getBriefing(viewOwner.ownerId, dia) : null;
-  const isFoco = searchParams?.view === "foco";
-  const isFechar = searchParams?.view === "fechar";
   // O fechamento só faz sentido depois de existir briefing.
   const fechamento = viewOwner && isFechar ? await getFechamento(viewOwner.ownerId, dia) : {};
 

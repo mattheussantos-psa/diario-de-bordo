@@ -12,9 +12,22 @@ const DICA = {
   trocar_segmento: "Para onde ela deveria ir?",
 };
 
+// Resumo do que o CRM já registrou hoje nesta empresa.
+function resumoAtividade(a) {
+  const partes = [];
+  if (a.ligacoes > 0) {
+    const conect = a.conectadas > 0 ? ` (${a.conectadas} conectada${a.conectadas === 1 ? "" : "s"})` : "";
+    partes.push(`${a.ligacoes} ligação${a.ligacoes === 1 ? "" : "es"}${conect}`);
+  }
+  if (a.reunioes > 0) partes.push(`${a.reunioes} reunião realizada`);
+  if (a.outras > 0) partes.push(`${a.outras} e-mail ou nota`);
+  return partes.join(" · ");
+}
+
 function Card({ e, ctx, onFechou }) {
   const [resultado, setResultado] = useState(e.resultado || "");
   const [obs, setObs] = useState(e.observacao || "");
+  const ativ = e.atividade;
   const [salvo, setSalvo] = useState(!!e.resultado);
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
@@ -64,6 +77,26 @@ function Card({ e, ctx, onFechou }) {
         <div className="emp-meta">abordagem: <b>{e.abordagem}</b></div>
       ) : (
         <div className="emp-meta emp-hist">sem abordagem definida de manhã</div>
+      )}
+
+      {/* O fechamento é conferência: o CRM responde o que já sabe. */}
+      {ativ && (
+        <div className="emp-ativ">
+          <span className="emp-ativ-num">{resumoAtividade(ativ)} — hoje no HubSpot</span>
+          {!resultado && ativ.sugerido && (
+            <button
+              className="btn-ghost"
+              onClick={() => {
+                setResultado(ativ.sugerido);
+                // A anotação da ligação já é a observação; o farmer corrige.
+                if (ativ.texto && !obs) setObs(ativ.texto);
+                setSalvo(false);
+              }}
+            >
+              Preencher pelo HubSpot
+            </button>
+          )}
+        </div>
       )}
 
       <div className="fech-opcoes">
@@ -133,6 +166,8 @@ export default function FecharDia({ itens, ctx }) {
 
   const comEstado = itens.map((e) => ({ ...e, resultado: feitos[e.id] ?? e.resultado }));
   const placar = placarDoDia(comEstado);
+  // Quantas o CRM consegue responder sozinho — o resto é digitação mesmo.
+  const sugestoes = comEstado.filter((e) => !e.resultado && e.atividade?.sugerido).length;
   const faltam = comEstado.filter((e) => !e.resultado).length;
 
   return (
@@ -143,6 +178,9 @@ export default function FecharDia({ itens, ctx }) {
           <span className="foco-status">{placar.pct}% de contato efetivo</span>
         </div>
         <div className="foco-nums">
+          {sugestoes > 0 && (
+            <span className="fech-ok">{sugestoes} com atividade já registrada no CRM</span>
+          )}
           <span><b>{placar.efetivo}</b> efetivo</span>
           <span><b>{placar.tentativa}</b> tentativa</span>
           <span><b>{placar.nao_abordei}</b> não abordei</span>
