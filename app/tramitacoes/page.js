@@ -125,13 +125,12 @@ export default async function Tramitacoes({ searchParams }) {
       <div className="viewbar">
         <div className="viewtoggle">
           <Link href="/">Diário de bordo</Link>
-          {gestor && <Link href="/aprovacoes">Aprovações</Link>}
-          {gestor && <Link href="/agenda">Agenda geral</Link>}
+          {gestor && <Link href="/agenda">Agenda do dia</Link>}
           {gestor && podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
-          <Link href="/ajuda">Como funciona</Link>
           <Link href="/tramitacoes" className="on">
             Tramitações{abertas.length ? ` (${abertas.length})` : ""}
           </Link>
+          <Link href="/ajuda">Como funciona</Link>
         </div>
         <div className="seg-toggle">
           {[["abertas", `A fazer (${abertas.length})`], ["aguardando", `Aguardando líder (${aguardando.length})`], ["todas", "Todas"]].map(

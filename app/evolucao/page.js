@@ -106,10 +106,10 @@ export default async function Evolucao({ searchParams }) {
       <div className="viewbar">
         <div className="viewtoggle">
           <Link href="/">Diário de bordo</Link>
-          <Link href="/aprovacoes">Aprovações</Link>
-          <Link href="/agenda">Agenda geral</Link>
+          <Link href="/agenda">Agenda do dia</Link>
           <Link href="/evolucao" className="on">Evolução</Link>
           {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+          <Link href="/ajuda">Como funciona</Link>
         </div>
         {!equipeTravada && EQUIPES_DE(seg).length > 0 && (
           <div className="seg-toggle">

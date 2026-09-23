@@ -293,7 +293,13 @@ export default async function Page({ searchParams }) {
           <div className="divider" />
           <div>
             <div className="title">Diário de Bordo</div>
-            <div className="subtitle">Negócios ativos no funil · sincronizado com o HubSpot</div>
+            {/* O objeto de trabalho muda com o segmento: o farmer não tem
+                funil, tem carteira. */}
+            <div className="subtitle">
+              {ehFarmer
+                ? "Carteira de empresas · sincronizado com o HubSpot"
+                : "Negócios ativos no funil · sincronizado com o HubSpot"}
+            </div>
           </div>
         </div>
         <div className="who">
@@ -307,16 +313,28 @@ export default async function Page({ searchParams }) {
 
       {gestor ? (
         <>
+          {/* O menu segue o fluxo do segmento: no CS o dia é carteira,
+              tramitação e evolução; no comercial é briefing e aprovação.
+              Mostrar as duas coisas juntas obriga a pessoa a descobrir
+              sozinha o que se aplica a ela. */}
           <div className="viewbar">
             <div className="viewtoggle">
               <Link href="/" className="on">Diário de bordo</Link>
-              <Link href="/aprovacoes">
-                Aprovações{pendentes > 0 ? ` (${pendentes})` : ""}
-              </Link>
-              <Link href="/agenda">Agenda geral</Link>
-              {/* Evolução é da carteira: só faz sentido dentro do segmento de CS. */}
-              {ehFarmer && podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
-              {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
+              {ehFarmer ? (
+                <>
+                  <Link href="/agenda">Agenda do dia</Link>
+                  {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
+                  {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
+                  <Link href="/ajuda">Como funciona</Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/aprovacoes">
+                    Aprovações{pendentes > 0 ? ` (${pendentes})` : ""}
+                  </Link>
+                  <Link href="/agenda">Agenda geral</Link>
+                </>
+              )}
             </div>
           </div>
           <AdminBar

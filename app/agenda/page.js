@@ -145,7 +145,7 @@ export default async function AgendaGeral({ searchParams }) {
           <img className="logo" src="/logo-psa.png" alt="PSA" />
           <div className="divider" />
           <div>
-            <div className="title">Agenda do dia</div>
+            <div className="title">{ehFarmer ? "Agenda do dia" : "Agenda geral"}</div>
             <div className="subtitle">
               {dayLabel(dia)} ·{" "}
               {ehFarmer
@@ -166,10 +166,19 @@ export default async function AgendaGeral({ searchParams }) {
       <div className="viewbar">
         <div className="viewtoggle">
           <Link href="/">Diário de bordo</Link>
-          <Link href="/aprovacoes">Aprovações</Link>
-          <Link href="/agenda" className="on">Agenda do dia</Link>
-          {ehFarmer && podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
-          {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+          {ehFarmer ? (
+            <>
+              <Link href="/agenda" className="on">Agenda do dia</Link>
+              {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
+              {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+              <Link href="/ajuda">Como funciona</Link>
+            </>
+          ) : (
+            <>
+              <Link href="/aprovacoes">Aprovações</Link>
+              <Link href="/agenda" className="on">Agenda geral</Link>
+            </>
+          )}
         </div>
         <div className="seg-toggle">
           {meusSegs.map((s) => (
