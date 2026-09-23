@@ -12,6 +12,7 @@ import FocoDia from "./FocoDia";
 import Ontem from "./Ontem";
 import Fechamento from "./Fechamento";
 import ListaDoDia from "./ListaDoDia";
+import FecharDia from "./FecharDia";
 import Link from "next/link";
 import { getBriefing, getDayBriefings, getFechamento, dbReady } from "../lib/db";
 import { getDealsByIds } from "../lib/hubspot";
@@ -19,7 +20,7 @@ import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada } from "../lib/permissoes";
 import { listaDoDia } from "../lib/dia-farmer";
-import { montaHistorico, precisaAuxilio } from "../lib/carteira";
+import { montaHistorico, precisaAuxilio, placarDoDia } from "../lib/carteira";
 import { getHistoricoCarteira } from "../lib/db";
 import { SEG_TRAMITACOES, empresaUrl } from "../lib/config";
 
@@ -202,6 +203,13 @@ export default async function Page({ searchParams }) {
   // Tramitações só para o time de CS e quem o gere.
   const verTramitacoes = podeVerTramitacoes(session.user, viewOwner ? String(meuOwnerId || viewOwner.ownerId) : null);
 
+  // Derivado da lista do dia: não custa chamada nenhuma a mais.
+  const kpiFarmer = {
+    compromisso: (carteiraDoDia || []).filter((e) => !e.extra).length,
+    mapeadas: (carteiraDoDia || []).filter((e) => e.abordagem).length,
+    placar: placarDoDia(carteiraDoDia || []),
+  };
+
   const rows = deals.map((d) => ({
     ...d,
     next: formatNextActivity(d.nextActivity),
@@ -292,26 +300,53 @@ export default async function Page({ searchParams }) {
         </div>
       )}
 
+      {ehFarmer ? (
+        <div className="kpis">
+          <div className="kpi"><div className="lab">Empresas do dia</div><div className="val">{kpiFarmer.compromisso}</div><div className="sub">o compromisso de hoje</div></div>
+          <div className="kpi"><div className="lab">Mapeadas</div><div className="val a">{kpiFarmer.mapeadas}</div><div className="sub">com abordagem definida</div></div>
+          <div className="kpi"><div className="lab">Contato efetivo</div><div className="val">{kpiFarmer.placar.pct}%</div><div className="sub">sobre o compromisso do dia</div></div>
+          <div className="kpi"><div className="lab">Sem registro</div><div className="val o">{kpiFarmer.placar.sem_registro}</div><div className="sub">ainda sem fechamento</div></div>
+        </div>
+      ) : (
       <div className="kpis">
         <div className="kpi"><div className="lab">Negócios ativos</div><div className="val">{rows.length}</div><div className="sub">{viewOwner ? `funil ${seg}` : "selecione um closer"}</div></div>
         <div className="kpi"><div className="lab">Atividades próximas</div><div className="val a">{hoje}</div><div className="sub">hoje ou nos próximos 3 dias</div></div>
         <div className="kpi"><div className="lab">Atrasadas</div><div className="val o">{atrasadas}</div><div className="sub">próxima atividade vencida</div></div>
         <div className="kpi"><div className="lab">Valor no funil</div><div className="val">{brl(valor)}</div><div className="sub">soma dos negócios abertos</div></div>
       </div>
+      )}
 
-      {viewOwner && ontem && <Ontem ontem={ontem} />}
+      {viewOwner && ontem && !ehFarmer && <Ontem ontem={ontem} />}
 
       {viewOwner && (
         <div className="viewbar">
           <div className="viewtoggle">
-            <Link href={qs("")} className={isFoco || isFechar ? "" : "on"}>Tabela</Link>
-            <Link href={qs("foco")} className={isFoco ? "on" : ""}>Meu dia</Link>
-            <Link href={qs("fechar")} className={isFechar ? "on" : ""}>Fechamento</Link>
+            {ehFarmer ? (
+              <>
+                <Link href={qs("")} className={isFechar ? "" : "on"}>Plano do dia</Link>
+                <Link href={qs("fechar")} className={isFechar ? "on" : ""}>Fechamento</Link>
+              </>
+            ) : (
+              <>
+                <Link href={qs("")} className={isFoco || isFechar ? "" : "on"}>Tabela</Link>
+                <Link href={qs("foco")} className={isFoco ? "on" : ""}>Meu dia</Link>
+                <Link href={qs("fechar")} className={isFechar ? "on" : ""}>Fechamento</Link>
+              </>
+            )}
           </div>
         </div>
       )}
 
-      {carteiraDoDia ? (
+      {carteiraDoDia && isFechar ? (
+        <FecharDia
+          itens={carteiraDoDia}
+          ctx={{
+            ownerId: viewOwner ? String(viewOwner.ownerId) : "",
+            dia,
+            diaLabel: dayLabel(dia),
+          }}
+        />
+      ) : carteiraDoDia ? (
         <ListaDoDia
           itens={carteiraDoDia}
           ctx={{
