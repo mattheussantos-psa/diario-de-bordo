@@ -1,7 +1,8 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
-import { marcarTramitacao, decidirTramitacao, dbReady } from "../../../lib/db";
-import { TIPOS } from "../../../lib/tramitacoes";
+import { marcarTramitacao, decidirTramitacao, salvarEvolucaoTramitacao, dbReady } from "../../../lib/db";
+import { TIPOS, RESULTADOS_TRAMITACAO, TRAMITACAO_EXIGE_OBSERVACAO } from "../../../lib/tramitacoes";
+import { dayKey } from "../../../lib/week";
 import { ehGestor } from "../../../lib/permissoes";
 
 const quem = (session) => session.user.name || session.user.email;
@@ -59,6 +60,40 @@ export async function PATCH(req) {
   } catch (e) {
     console.error("[tramitacoes] falha ao decidir:", e);
     return Response.json({ error: "Falha ao registrar a decisão." }, { status: 500 });
+  }
+  return Response.json({ ok: true });
+}
+
+// Evolução do dia: resolvi, avancei ou travado. É o que o líder lê para saber
+// o que depende de terceiro e o que depende do farmer.
+export async function PUT(req) {
+  const session = await auth();
+  if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });
+  if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
+
+  const body = await req.json().catch(() => ({}));
+  const { ticketId, tipo, resultado } = body;
+  const observacao = String(body.observacao || "").trim();
+
+  if (!ticketId || !(tipo in TIPOS)) {
+    return Response.json({ error: "Tramitação inválida." }, { status: 400 });
+  }
+  if (!RESULTADOS_TRAMITACAO.some((r) => r.key === resultado)) {
+    return Response.json({ error: "Resultado inválido." }, { status: 400 });
+  }
+  // Travado sem explicação não vira pedido de ajuda: vira número.
+  if (TRAMITACAO_EXIGE_OBSERVACAO.includes(resultado) && observacao.length < 10) {
+    return Response.json(
+      { error: "Diga o que travou — é o que mostra ao líder o que depende de terceiro." },
+      { status: 400 }
+    );
+  }
+
+  try {
+    await salvarEvolucaoTramitacao(ticketId, tipo, body.dia || dayKey(), resultado, observacao, quem(session));
+  } catch (e) {
+    console.error("[tramitacoes] falha ao registrar a evolução:", e);
+    return Response.json({ error: "Falha ao registrar." }, { status: 500 });
   }
   return Response.json({ ok: true });
 }

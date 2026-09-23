@@ -664,3 +664,4 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .dia-vazio { color: var(--muted); font-size: 12.5px; font-style: italic; }
 .dia-nums { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
 .dia-nums b { color: var(--ink); }
+.tram-evo { display: flex; flex-direction: column; gap: 9px; border-top: 1px solid var(--line); padding-top: 11px; }

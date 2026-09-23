@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { getTicketsCS, getOwnerByEmail, getOwnerNames } from "../../lib/hubspot";
-import { getTramitacoes, dbReady } from "../../lib/db";
+import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
 import { ehGestor, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
@@ -52,7 +52,10 @@ export default async function Tramitacoes({ searchParams }) {
     tickets = tickets.filter((t) => daEquipe.has(String(t.ownerId)));
   }
 
-  const registros = await getTramitacoes(tickets.map((t) => t.id));
+  const [registros, evolucoes] = await Promise.all([
+    getTramitacoes(tickets.map((t) => t.id)),
+    getEvolucaoTramitacoes(tickets.map((t) => t.id), hoje),
+  ]);
 
   const todas = tickets.flatMap((t) => pendenciasDoTicket(t, hoje, registros));
 
@@ -222,6 +225,7 @@ export default async function Tramitacoes({ searchParams }) {
               p={p}
               ticket={ticketsById[p.ticketId]}
               ehGestor={gestor}
+              evolucao={evolucoes[p.ticketId + "|" + p.tipo] || null}
             />
           ))}
         </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { RESULTADOS_TRAMITACAO, TRAMITACAO_EXIGE_OBSERVACAO } from "../lib/tramitacoes";
 
 const SELO = {
   aguardando: { txt: "Aguardando líder", cls: "aguardando" },
@@ -14,12 +15,38 @@ function prazoTexto(faltam) {
   return `faltam ${faltam} dia${faltam === 1 ? "" : "s"}`;
 }
 
-export default function TramitacaoCard({ p, ticket, ehGestor }) {
+export default function TramitacaoCard({ p, ticket, ehGestor, evolucao }) {
   const router = useRouter();
+  const [resultado, setResultado] = useState(evolucao?.resultado || "");
+  const [obsEvo, setObsEvo] = useState(evolucao?.observacao || "");
+  const [evoSalva, setEvoSalva] = useState(!!evolucao?.resultado);
+  const [evoErro, setEvoErro] = useState("");
+
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [abrirDevolver, setAbrirDevolver] = useState(false);
   const [motivo, setMotivo] = useState("");
+
+  async function registrarEvolucao() {
+    setBusy(true);
+    setEvoErro("");
+    try {
+      const res = await fetch("/api/tramitacoes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticketId: p.ticketId, tipo: p.tipo, resultado, observacao: obsEvo }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Falha ao registrar.");
+      }
+      setEvoSalva(true);
+    } catch (e) {
+      setEvoErro(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function chamar(metodo, corpo) {
     setBusy(true);
@@ -67,6 +94,40 @@ export default function TramitacaoCard({ p, ticket, ehGestor }) {
       {p.status === "aguardando" && p.marcadoPor && (
         <div className="tram-por">marcada por {p.marcadoPor}</div>
       )}
+
+      {/* Como andou hoje. Travado é o que sobe para o líder. */}
+      <div className="tram-evo">
+        <div className="fech-opcoes">
+          {RESULTADOS_TRAMITACAO.map((r) => (
+            <button
+              key={r.key}
+              className={"fech-op " + r.cls + (resultado === r.key ? " on" : "")}
+              onClick={() => { setResultado(r.key); setEvoSalva(false); setEvoErro(""); }}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+        {resultado && (
+          <>
+            {TRAMITACAO_EXIGE_OBSERVACAO.includes(resultado) && (
+              <textarea
+                className="obs"
+                placeholder="O que travou? De quem depende?"
+                value={obsEvo}
+                onChange={(e) => { setObsEvo(e.target.value); setEvoSalva(false); }}
+              />
+            )}
+            <div className="fech-rodape">
+              {evoErro && <span className="err">{evoErro}</span>}
+              {evoSalva && !evoErro && <span className="saved">registrado ✓</span>}
+              <button className="btn-ghost" onClick={registrarEvolucao} disabled={busy || evoSalva}>
+                {evoSalva ? "Registrado" : "Registrar evolução"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
       <div className="tram-acoes">
         {msg && <span className="err">{msg}</span>}
