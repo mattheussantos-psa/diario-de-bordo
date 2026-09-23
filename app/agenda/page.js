@@ -4,7 +4,10 @@ import { auth, signOut } from "../../auth";
 import { getDealsByIds } from "../../lib/hubspot";
 import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
-import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe, EQUIPES_DE, closersDe, semEquipe } from "../../lib/config";
+import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe, EQUIPES_DE, closersDe, semEquipe, SEG_TRAMITACOES, empresaUrl } from "../../lib/config";
+import { getDiasDosFarmers, getTrocasPendentes, getOrientacoes, getHistoricoCarteira } from "../../lib/db";
+import { situacaoDoDia, placarDoDia, montaHistorico, precisaAuxilio } from "../../lib/carteira";
+import AgendaFarmers from "../AgendaFarmers";
 import { ehGestor, segmentosDe, podeGerirCloser, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +76,39 @@ export default async function AgendaGeral({ searchParams }) {
       podeGerirCloser(session.user, b.ownerId)
   ).length;
 
+  // O time de CS não trabalha briefing de negócios: a agenda dele é a carteira.
+  const ehFarmer = seg === SEG_TRAMITACOES;
+  let farmersDoDia = null;
+  if (ehFarmer) {
+    const idsTime = closersDe(seg, equipe).map((c) => c.id);
+    const [dias, trocas, orientacoes] = await Promise.all([
+      getDiasDosFarmers(idsTime, dia),
+      getTrocasPendentes(idsTime),
+      getOrientacoes(idsTime),
+    ]);
+    // O histórico é por farmer: sem ele não dá para saber quem pediu auxílio.
+    const historicos = await Promise.all(idsTime.map((id) => getHistoricoCarteira(id, dia)));
+    farmersDoDia = closersDe(seg, equipe).map((c, i) => {
+      const itens = dias[c.id] || [];
+      const h = montaHistorico(historicos[i]);
+      return {
+        ownerId: c.id,
+        nome: c.nome,
+        foto: fotoDe(c.id),
+        situacao: situacaoDoDia(itens),
+        placar: placarDoDia(itens),
+        itens: itens.map((e) => ({
+          ...e,
+          url: empresaUrl(e.id),
+          historico: h.get(String(e.id)) || null,
+          precisaAuxilio: precisaAuxilio(h.get(String(e.id))),
+          orientacao: orientacoes[c.id]?.[e.id] || null,
+        })),
+        trocas: (trocas[c.id] || []).map((t) => ({ ...t, url: empresaUrl(t.id) })),
+      };
+    });
+  }
+
   const ids = briefings.flatMap((b) => Object.keys(b.items));
   const dealsById = ids.length ? await getDealsByIds(ids) : {};
 
@@ -134,7 +170,11 @@ export default async function AgendaGeral({ searchParams }) {
         </div>
       )}
 
-      {dbReady() && semBriefing.length > 0 && (
+      {farmersDoDia && (
+        <AgendaFarmers farmers={farmersDoDia} diaLabel={dayLabel(dia)} />
+      )}
+
+      {!farmersDoDia && dbReady() && semBriefing.length > 0 && (
         <div className="sem-briefing">
           <span className="sem-briefing-lab">Sem briefing hoje ({semBriefing.length})</span>
           <div className="sem-briefing-lista">
@@ -150,7 +190,7 @@ export default async function AgendaGeral({ searchParams }) {
         </div>
       )}
 
-      {dbReady() && (
+      {!farmersDoDia && dbReady() && (
         <div className="dia-grid">
           {comBriefing.map((c) => {
             const itens = Object.entries(c.briefing?.items || {});

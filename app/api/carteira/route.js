@@ -1,6 +1,6 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
-import { salvarAbordagem, salvarResultadoCarteira, dbReady } from "../../../lib/db";
+import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, dbReady } from "../../../lib/db";
 import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO } from "../../../lib/carteira";
 import { dayKey } from "../../../lib/week";
 import { podeGerirCloser } from "../../../lib/permissoes";
@@ -82,6 +82,10 @@ export async function PATCH(req) {
   try {
     const achou = await salvarResultadoCarteira(ownerId, body.dia || dayKey(), companyId, resultado, observacao);
     if (!achou) return Response.json({ error: "Essa empresa não está na lista de hoje." }, { status: 400 });
+    // O pedido é o que segura a empresa fora do rodízio até o líder decidir.
+    if (resultado === "trocar_segmento") {
+      await pedirTroca(ownerId, companyId, body.nome || null, observacao);
+    }
   } catch (e) {
     console.error("[carteira] falha ao salvar o resultado:", e);
     return Response.json({ error: "Falha ao salvar." }, { status: 500 });
