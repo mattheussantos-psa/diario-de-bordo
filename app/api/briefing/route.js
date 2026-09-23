@@ -1,6 +1,6 @@
 import { auth } from "../../../auth";
-import { getOwnerByEmail, getDealsByIds, updateDeal, temPropriedadeDeal } from "../../../lib/hubspot";
-import { rotuloDa } from "../../../lib/estrategias";
+import { getOwnerByEmail, getDealsByIds, updateDeal, propriedadeDeal } from "../../../lib/hubspot";
+import { valorDaEstrategia } from "../../../lib/estrategias";
 import { saveBriefing, reviewBriefing, getBriefing, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
 import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
@@ -148,8 +148,9 @@ export async function PATCH(req) {
   const briefing = await getBriefing(String(ownerId), dia);
   const alvos = Object.entries(briefing?.items || {}).filter(([, v]) => v.para);
 
-  // A estratégia só vai junto se a propriedade já existir na conta.
-  const gravaEstrategia = await temPropriedadeDeal("estrategia_do_dia");
+  // A estratégia só vai junto se a propriedade já existir na conta, e o valor
+  // é resolvido contra as opções reais dela — ver valorDaEstrategia.
+  const propEstrategia = await propriedadeDeal("estrategia");
 
   // Um de cada vez: rajada de escrita é o que derrubou os salvamentos antes.
   let aplicados = 0;
@@ -157,7 +158,8 @@ export async function PATCH(req) {
   for (const [dealId, v] of alvos) {
     try {
       const patch = { temperatura_atual: v.para };
-      if (gravaEstrategia && v.estrategia) patch.estrategia_do_dia = rotuloDa(v.estrategia);
+      const estrat = valorDaEstrategia(propEstrategia, v.estrategia);
+      if (estrat !== undefined) patch.estrategia = estrat;
       await updateDeal(dealId, patch);
       aplicados++;
     } catch (e) {
