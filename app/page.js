@@ -22,6 +22,7 @@ import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTrami
 import { listaDoDia } from "../lib/dia-farmer";
 import { resumoDoMes } from "../lib/metricas-farmer";
 import { atividadeDoDia } from "../lib/atividade";
+import { empresasComSelo } from "../lib/relacionamento";
 import { montaHistorico, precisaAuxilio, placarDoDia } from "../lib/carteira";
 import { getHistoricoCarteira } from "../lib/db";
 import { SEG_TRAMITACOES, empresaUrl } from "../lib/config";
@@ -180,12 +181,22 @@ export default async function Page({ searchParams }) {
           }))[String(viewOwner.ownerId)] || {}
         : {};
 
+      // Selo de relacionamento: raro de propósito, e caro de apurar — falha
+      // aqui só tira o selo, não derruba o dia.
+      const selos = await empresasComSelo(String(viewOwner.ownerId), itens.map((e) => String(e.id))).catch(
+        (err) => {
+          console.error("[carteira] selo de relacionamento falhou:", err?.message);
+          return new Set();
+        }
+      );
+
       carteiraDoDia = itens.map((e) => ({
         ...e,
         url: empresaUrl(e.id),
         historico: historico.get(String(e.id)) || null,
         precisaAuxilio: precisaAuxilio(historico.get(String(e.id))),
         atividade: ativ[String(e.id)] || null,
+        selo: selos.has(String(e.id)),
       }));
     } catch (e) {
       console.error("[carteira] falha ao montar o dia:", e);
@@ -315,6 +326,7 @@ export default async function Page({ searchParams }) {
           <div className="viewtoggle">
             <Link href="/" className="on">Diário de bordo</Link>
             {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
+            {ehFarmer && <Link href="/ajuda">Como funciona</Link>}
           </div>
           <div className="ctx"><span className="ctx-dot" />Segmento: {seg}</div>
         </div>
@@ -383,6 +395,7 @@ export default async function Page({ searchParams }) {
             ownerId: viewOwner ? String(viewOwner.ownerId) : "",
             dia,
             diaLabel: dayLabel(dia),
+            urlFechamento: qs("fechar"),
           }}
         />
       ) : isFechar ? (

@@ -53,6 +53,7 @@ function Card({ e, ctx, onAbordagem }) {
         <span className={"emp-balde b-" + e.balde}>{BALDES[e.balde]?.label || e.balde}</span>
         {e.extra && <span className="emp-tag">extra</span>}
         {e.precisaAuxilio && <span className="emp-tag auxilio">auxílio do líder</span>}
+        {e.selo && <span className="emp-tag selo" title="Negócio registrado e mais de uma reunião de relacionamento com você">relacionamento</span>}
       </div>
 
       <a className="emp-nome" href={e.url} target="_blank" rel="noreferrer">{e.nome}</a>
@@ -131,11 +132,18 @@ export default function ListaDoDia({ itens, ctx }) {
           {faltam > 0 ? (
             <span className="foco-alerta"><b>{faltam}</b> sem abordagem definida</span>
           ) : (
-            <span className="fech-ok">todas mapeadas</span>
+            <span className="fech-ok">dia iniciado — todas mapeadas</span>
           )}
-          <button className="btn-primary" disabled={faltam > 0} title={faltam > 0 ? "Defina a abordagem de todas antes de iniciar" : undefined}>
-            Iniciar o dia
-          </button>
+          {/* Cada abordagem já é salva ao ser escolhida; o dia começa quando
+              todas estão definidas. O botão leva ao passo seguinte em vez de
+              fingir que grava algo a mais. */}
+          <a
+            className={"btn-primary" + (faltam > 0 ? " desativado" : "")}
+            href={faltam > 0 ? undefined : ctx.urlFechamento}
+            title={faltam > 0 ? "Defina a abordagem de todas antes de fechar o dia" : undefined}
+          >
+            Ir para o fechamento
+          </a>
         </div>
       </div>
 

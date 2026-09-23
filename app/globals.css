@@ -668,3 +668,20 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .emp-ativ { display: flex; align-items: center; justify-content: space-between; gap: 10px;
   flex-wrap: wrap; background: var(--azul-soft); border-radius: 10px; padding: 9px 11px; }
 .emp-ativ-num { font-size: 12px; color: var(--azul); font-weight: 600; }
+.emp-tag.selo { background: #eef2ff; color: #4338ca; }
+a.btn-primary { text-decoration: none; display: inline-block; }
+a.btn-primary.desativado { opacity: .45; pointer-events: none; }
+
+/* --------------------------------------------------------- página de ajuda */
+.ajuda { display: flex; flex-direction: column; gap: 16px; max-width: 900px; }
+.ajuda-bloco { padding: 22px 24px; }
+.ajuda-bloco h2 { font-size: 17px; margin: 0 0 12px; }
+.ajuda-bloco p { margin: 0 0 12px; line-height: 1.6; font-size: 14px; }
+.ajuda-nota { color: var(--muted); font-size: 13px !important; background: var(--surface);
+  border-radius: 10px; padding: 12px 14px; }
+.ajuda-lista { margin: 0 0 12px; padding-left: 20px; line-height: 1.7; font-size: 14px; }
+.ajuda-tab { width: 100%; min-width: 0; border-collapse: collapse; margin-bottom: 12px; }
+.ajuda-tab th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+  color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.ajuda-tab td { padding: 9px 10px; border-bottom: 1px solid var(--line); font-size: 13.5px;
+  vertical-align: top; line-height: 1.5; }

@@ -128,6 +128,7 @@ export default async function Tramitacoes({ searchParams }) {
           {gestor && <Link href="/aprovacoes">Aprovações</Link>}
           {gestor && <Link href="/agenda">Agenda geral</Link>}
           {gestor && <Link href="/evolucao">Evolução</Link>}
+          <Link href="/ajuda">Como funciona</Link>
           <Link href="/tramitacoes" className="on">
             Tramitações{abertas.length ? ` (${abertas.length})` : ""}
           </Link>
