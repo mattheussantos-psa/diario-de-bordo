@@ -601,3 +601,6 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .tram-acoes { display: flex; align-items: center; justify-content: flex-end; gap: 9px; flex-wrap: wrap;
   border-top: 1px solid var(--line); padding-top: 10px; }
 .tram-espera { color: var(--muted); font-size: 12px; font-style: italic; }
+.tram-farmers { flex-wrap: wrap; max-width: 100%; }
+.tram-farmers a b { color: var(--azul); margin-left: 3px; }
+.tram-farmers a.on b { color: inherit; }

@@ -4,9 +4,9 @@ import { auth, signOut } from "../../auth";
 import { getTicketsCS, getOwnerByEmail, getOwnerNames } from "../../lib/hubspot";
 import { getTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
-import { NOME_CLOSER, closersDe } from "../../lib/config";
+import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
 import { ehGestor, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
-import { PIPELINE_CS, pendenciasDoTicket, TIPOS } from "../../lib/tramitacoes";
+import { PIPELINE_CS, ETAPAS_ENCERRADAS, pendenciasDoTicket, TIPOS } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +24,8 @@ export default async function Tramitacoes({ searchParams }) {
   const hoje = dayKey();
   const filtro = searchParams?.f || "abertas";
 
+  const eqLider = equipeLiderada(session.user);
+
   // Tramitação é trabalho do time de CS. Resolve o owner antes de qualquer
   // chamada pesada: sem permissão, a pessoa nem chega a consultar o HubSpot.
   let meuOwnerId = null;
@@ -36,14 +38,13 @@ export default async function Tramitacoes({ searchParams }) {
   let tickets = [];
   let erro = null;
   try {
-    tickets = await getTicketsCS(PIPELINE_CS);
+    tickets = await getTicketsCS(PIPELINE_CS, ETAPAS_ENCERRADAS);
   } catch (e) {
     console.error("[tramitacoes] falha ao buscar tickets:", e);
     erro = e;
   }
 
   // Quem não é gestor vê só o que é dele; quem lidera uma equipe vê a equipe.
-  const eqLider = equipeLiderada(session.user);
   if (!gestor) {
     tickets = tickets.filter((t) => String(t.ownerId) === meuOwnerId);
   } else if (eqLider) {
@@ -54,9 +55,30 @@ export default async function Tramitacoes({ searchParams }) {
   const registros = await getTramitacoes(tickets.map((t) => t.id));
 
   const todas = tickets.flatMap((t) => pendenciasDoTicket(t, hoje, registros));
-  const abertas = todas.filter((p) => p.status !== "aguardando");
-  const aguardando = todas.filter((p) => p.status === "aguardando");
-  const lista = filtro === "aguardando" ? aguardando : filtro === "todas" ? todas : abertas;
+
+  // Quantas pendências estão com cada farmer, para o gestor ver a distribuição
+  // e filtrar. Conta sobre "a fazer", que é o que cobra alguém hoje.
+  const donoDo = (p) => String(tickets.find((t) => t.id === p.ticketId)?.ownerId || "");
+  const porFarmer = {};
+  for (const p of todas.filter((x) => x.status !== "aguardando")) {
+    const d = donoDo(p);
+    if (d) porFarmer[d] = (porFarmer[d] || 0) + 1;
+  }
+
+  const farmerSel = searchParams?.owner || "";
+  const doFarmer = farmerSel ? todas.filter((p) => donoDo(p) === farmerSel) : todas;
+
+  const abertas = doFarmer.filter((p) => p.status !== "aguardando");
+  const aguardando = doFarmer.filter((p) => p.status === "aguardando");
+  const lista = filtro === "aguardando" ? aguardando : filtro === "todas" ? doFarmer : abertas;
+
+  // Farmers que o usuário alcança, com a contagem ao lado do nome.
+  const equipeDoFiltro = eqLider ? eqLider.equipe : "";
+  const farmersVisiveis = gestor
+    ? closersDe(SEG_TRAMITACOES, equipeDoFiltro)
+        .map((c) => ({ ...c, n: porFarmer[c.id] || 0 }))
+        .sort((a, b) => b.n - a.n || a.nome.localeCompare(b.nome, "pt-BR"))
+    : [];
 
   // Nome do dono só para quem aparece na tela, e só se não estiver no cadastro.
   const donos = [...new Set(lista.map((p) => tickets.find((t) => t.id === p.ticketId)?.ownerId).filter(Boolean))];
@@ -66,7 +88,8 @@ export default async function Tramitacoes({ searchParams }) {
     tickets.map((t) => [t.id, { ...t, donoNome: NOME_CLOSER[t.ownerId] || nomesHub[t.ownerId] || "" }])
   );
 
-  const atrasadas = todas.filter((p) => p.atrasada && p.status !== "aguardando").length;
+  // Segue o mesmo recorte do resto da tela, senão o número briga com a lista.
+  const atrasadas = doFarmer.filter((p) => p.atrasada && p.status !== "aguardando").length;
 
   return (
     <div className="wrap">
@@ -104,11 +127,40 @@ export default async function Tramitacoes({ searchParams }) {
         <div className="seg-toggle">
           {[["abertas", `A fazer (${abertas.length})`], ["aguardando", `Aguardando líder (${aguardando.length})`], ["todas", "Todas"]].map(
             ([v, l]) => (
-              <Link key={v} href={`/tramitacoes?f=${v}`} className={filtro === v ? "on" : ""}>{l}</Link>
+              <Link
+                key={v}
+                href={`/tramitacoes?f=${v}${farmerSel ? `&owner=${farmerSel}` : ""}`}
+                className={filtro === v ? "on" : ""}
+              >
+                {l}
+              </Link>
             )
           )}
         </div>
       </div>
+
+      {/* Quem está com o quê. Sem isto, o board é uma pilha sem dono. */}
+      {farmersVisiveis.length > 0 && (
+        <div className="bar">
+          <div className="admin-controls">
+            <span className="tram-tipo">Farmer</span>
+            <div className="seg-toggle tram-farmers">
+              <Link href={`/tramitacoes?f=${filtro}`} className={farmerSel ? "" : "on"}>
+                Todos
+              </Link>
+              {farmersVisiveis.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/tramitacoes?f=${filtro}&owner=${c.id}`}
+                  className={farmerSel === c.id ? "on" : ""}
+                >
+                  {c.nome.split(" ")[0]} <b>{c.n}</b>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {erro && (
         <div className="card">
@@ -138,7 +190,7 @@ export default async function Tramitacoes({ searchParams }) {
             <div className="sub">marcadas, esperando confirmação</div>
           </div>
           <div className="kpi">
-            <div className="lab">Tickets no funil</div>
+            <div className="lab">Tickets ativos</div>
             <div className="val">{tickets.length}</div>
             <div className="sub">
               {eqLider ? "equipe " + eqLider.equipe : gestor ? "CS inteiro" : "seus tickets"}
