@@ -577,3 +577,27 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .evo-nota { color: var(--muted); font-size: 12.5px; line-height: 1.65; background: var(--surface);
   border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
 .evo-nota b { color: var(--ink); }
+
+/* ----------------------------------------------------------- tramitações */
+.tram-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; align-items: start; }
+.tram-card { background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--azul);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 15px 17px;
+  display: flex; flex-direction: column; gap: 9px; }
+.tram-card.atrasada { border-left-color: var(--laranja); }
+.tram-card.esperando { border-left-color: #c98a4b; background: var(--surface-2); }
+.tram-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tram-tipo { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
+.tram-prazo { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+  background: var(--ink-soft); color: var(--muted); white-space: nowrap; }
+.tram-prazo.late { background: var(--laranja-soft); color: var(--laranja); }
+.tram-prazo.hoje { background: var(--azul-soft); color: var(--azul); }
+.tram-assunto { font-size: 14.5px; font-weight: 700; line-height: 1.35; }
+.tram-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 12px; }
+.tram-selo { font-size: 10px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 6px; }
+.tram-selo.aguardando { background: #f4efe9; color: #a9702f; }
+.tram-selo.devolvido { background: var(--laranja-soft); color: var(--laranja); }
+.tram-por { color: var(--muted); font-size: 12px; }
+.tram-acoes { display: flex; align-items: center; justify-content: flex-end; gap: 9px; flex-wrap: wrap;
+  border-top: 1px solid var(--line); padding-top: 10px; }
+.tram-espera { color: var(--muted); font-size: 12px; font-style: italic; }
