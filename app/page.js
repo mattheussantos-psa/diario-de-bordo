@@ -16,7 +16,7 @@ import { getBriefing, getDayBriefings, getFechamento, dbReady } from "../lib/db"
 import { getDealsByIds } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
-import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis } from "../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes } from "../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -167,6 +167,9 @@ export default async function Page({ searchParams }) {
       ).length
     : 0;
 
+  // Tramitações só para o time de CS e quem o gere.
+  const verTramitacoes = podeVerTramitacoes(session.user, viewOwner ? String(meuOwnerId || viewOwner.ownerId) : null);
+
   const rows = deals.map((d) => ({
     ...d,
     next: formatNextActivity(d.nextActivity),
@@ -233,7 +236,7 @@ export default async function Page({ searchParams }) {
               </Link>
               <Link href="/agenda">Agenda geral</Link>
               <Link href="/evolucao">Evolução</Link>
-              <Link href="/tramitacoes">Tramitações</Link>
+              {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
             </div>
           </div>
           <AdminBar
@@ -251,7 +254,7 @@ export default async function Page({ searchParams }) {
         <div className="viewbar">
           <div className="viewtoggle">
             <Link href="/" className="on">Diário de bordo</Link>
-            <Link href="/tramitacoes">Tramitações</Link>
+            {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
           </div>
           <div className="ctx"><span className="ctx-dot" />Segmento: {seg}</div>
         </div>

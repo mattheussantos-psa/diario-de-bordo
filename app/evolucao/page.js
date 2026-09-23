@@ -4,7 +4,7 @@ import { auth, signOut } from "../../auth";
 import { getEvolucao, dbReady } from "../../lib/db";
 import { dayKey, dayLabel, ultimosDiasUteis } from "../../lib/week";
 import { NOME_CLOSER, SEG_CLOSER, SEGMENTOS, EQUIPES_DE, closersDe, fotoDe } from "../../lib/config";
-import { ehGestor, segmentosDe, podeGerirCloser } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser , podeVerTramitacoes } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -106,7 +106,7 @@ export default async function Evolucao({ searchParams }) {
           <Link href="/aprovacoes">Aprovações</Link>
           <Link href="/agenda">Agenda geral</Link>
           <Link href="/evolucao" className="on">Evolução</Link>
-          <Link href="/tramitacoes">Tramitações</Link>
+          {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
         </div>
         <div className="seg-toggle">
           {meusSegs.map((s) => (

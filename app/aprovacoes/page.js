@@ -6,7 +6,7 @@ import { getDayBriefings, getBriefingHistory, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, NOME_CLOSER, SEG_CLOSER, fotoDe } from "../../lib/config";
 import { seedDia } from "../../lib/seed";
-import { ehGestor, segmentosDe, briefingsGeriveis, podeGerirCloser } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, briefingsGeriveis, podeGerirCloser , podeVerTramitacoes } from "../../lib/permissoes";
 import ApprovalCard from "../ApprovalCard";
 import HistLinha from "../HistLinha";
 
@@ -102,7 +102,7 @@ export default async function Aprovacoes({ searchParams }) {
           <Link href="/aprovacoes" className="on">Aprovações{pendentes.length ? ` (${pendentes.length})` : ""}</Link>
           <Link href="/agenda">Agenda geral</Link>
           <Link href="/evolucao">Evolução</Link>
-          <Link href="/tramitacoes">Tramitações</Link>
+          {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
         </div>
         <div className="seg-toggle">
           {[["pendentes", "Aguardando"], ["decididos", "Decididos"], ["todos", "Todos"], ["historico", "Histórico"]].map(([v, l]) => (

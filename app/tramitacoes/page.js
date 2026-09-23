@@ -5,7 +5,7 @@ import { getTicketsCS, getOwnerByEmail, getOwnerNames } from "../../lib/hubspot"
 import { getTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER } from "../../lib/config";
-import { ehGestor } from "../../lib/permissoes";
+import { ehGestor, podeVerTramitacoes } from "../../lib/permissoes";
 import { PIPELINE_CS, pendenciasDoTicket, TIPOS } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
@@ -24,6 +24,15 @@ export default async function Tramitacoes({ searchParams }) {
   const hoje = dayKey();
   const filtro = searchParams?.f || "abertas";
 
+  // Tramitação é trabalho do time de CS. Resolve o owner antes de qualquer
+  // chamada pesada: sem permissão, a pessoa nem chega a consultar o HubSpot.
+  let meuOwnerId = null;
+  if (!session.user.isAdmin) {
+    const owner = await getOwnerByEmail(session.user.email.toLowerCase()).catch(() => null);
+    meuOwnerId = owner ? String(owner.ownerId) : null;
+  }
+  if (!podeVerTramitacoes(session.user, meuOwnerId)) redirect("/");
+
   let tickets = [];
   let erro = null;
   try {
@@ -34,12 +43,7 @@ export default async function Tramitacoes({ searchParams }) {
   }
 
   // Quem não é gestor vê só o que é dele.
-  let meuOwnerId = null;
-  if (!gestor) {
-    const owner = await getOwnerByEmail(session.user.email.toLowerCase()).catch(() => null);
-    meuOwnerId = owner ? String(owner.ownerId) : null;
-    tickets = tickets.filter((t) => String(t.ownerId) === meuOwnerId);
-  }
+  if (!gestor) tickets = tickets.filter((t) => String(t.ownerId) === meuOwnerId);
 
   const registros = await getTramitacoes(tickets.map((t) => t.id));
 

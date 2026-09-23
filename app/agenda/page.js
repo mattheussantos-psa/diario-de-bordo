@@ -5,7 +5,7 @@ import { getDealsByIds } from "../../lib/hubspot";
 import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe, EQUIPES_DE, closersDe, semEquipe } from "../../lib/config";
-import { ehGestor, segmentosDe, podeGerirCloser } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser , podeVerTramitacoes } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -105,7 +105,7 @@ export default async function AgendaGeral({ searchParams }) {
           <Link href="/aprovacoes">Aprovações</Link>
           <Link href="/agenda" className="on">Agenda do dia</Link>
           <Link href="/evolucao">Evolução</Link>
-          <Link href="/tramitacoes">Tramitações</Link>
+          {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
         </div>
         <div className="seg-toggle">
           {meusSegs.map((s) => (
