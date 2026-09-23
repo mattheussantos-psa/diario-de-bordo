@@ -20,6 +20,7 @@ import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada } from "../lib/permissoes";
 import { listaDoDia } from "../lib/dia-farmer";
+import { resumoDoMes } from "../lib/metricas-farmer";
 import { montaHistorico, precisaAuxilio, placarDoDia } from "../lib/carteira";
 import { getHistoricoCarteira } from "../lib/db";
 import { SEG_TRAMITACOES, empresaUrl } from "../lib/config";
@@ -152,6 +153,7 @@ export default async function Page({ searchParams }) {
   // Farmer trabalha empresas da própria carteira, não negócios do funil.
   const ehFarmer = seg === SEG_TRAMITACOES;
   let carteiraDoDia = null;
+  let resumoMes = null;
   if (ehFarmer && viewOwner) {
     try {
       const [{ itens }, linhas] = await Promise.all([
@@ -159,6 +161,12 @@ export default async function Page({ searchParams }) {
         getHistoricoCarteira(String(viewOwner.ownerId), dayKey()),
       ]);
       const historico = montaHistorico(linhas);
+      // Números do mês: o cabeçalho do farmer fala de carteira e resultado,
+      // não de funil. Falha aqui não derruba o dia.
+      resumoMes = await resumoDoMes([String(viewOwner.ownerId)], dayKey()).catch((err) => {
+        console.error("[carteira] resumo do mês falhou:", err?.message);
+        return null;
+      });
       carteiraDoDia = itens.map((e) => ({
         ...e,
         url: empresaUrl(e.id),
@@ -301,12 +309,22 @@ export default async function Page({ searchParams }) {
       )}
 
       {ehFarmer ? (
+        <>
         <div className="kpis">
           <div className="kpi"><div className="lab">Empresas do dia</div><div className="val">{kpiFarmer.compromisso}</div><div className="sub">o compromisso de hoje</div></div>
           <div className="kpi"><div className="lab">Mapeadas</div><div className="val a">{kpiFarmer.mapeadas}</div><div className="sub">com abordagem definida</div></div>
-          <div className="kpi"><div className="lab">Contato efetivo</div><div className="val">{kpiFarmer.placar.pct}%</div><div className="sub">sobre o compromisso do dia</div></div>
+          <div className="kpi"><div className="lab">Contato efetivo hoje</div><div className="val">{kpiFarmer.placar.pct}%</div><div className="sub">sobre o compromisso do dia</div></div>
           <div className="kpi"><div className="lab">Sem registro</div><div className="val o">{kpiFarmer.placar.sem_registro}</div><div className="sub">ainda sem fechamento</div></div>
         </div>
+        {resumoMes && (
+          <div className="kpis">
+            <div className="kpi"><div className="lab">Oportunidades no mês</div><div className="val a">{resumoMes.oportunidades}</div><div className="sub">negócios criados por você</div></div>
+            <div className="kpi"><div className="lab">Receita gerada</div><div className="val">{brl(resumoMes.receita)}</div><div className="sub">negócios ganhos no mês</div></div>
+            <div className="kpi"><div className="lab">Tickets ativos</div><div className="val">{resumoMes.ticketsAtivos}</div><div className="sub">eventos em execução</div></div>
+            <div className="kpi"><div className="lab">Carteira tocada</div><div className="val o">{resumoMes.pctContato}%</div><div className="sub">{resumoMes.comContato} de {resumoMes.carteira} empresas no mês</div></div>
+          </div>
+        )}
+        </>
       ) : (
       <div className="kpis">
         <div className="kpi"><div className="lab">Negócios ativos</div><div className="val">{rows.length}</div><div className="sub">{viewOwner ? `funil ${seg}` : "selecione um closer"}</div></div>
