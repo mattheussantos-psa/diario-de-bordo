@@ -5,7 +5,8 @@ import { getDealsByIds } from "../../lib/hubspot";
 import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe, EQUIPES_DE, closersDe, semEquipe, SEG_TRAMITACOES, empresaUrl } from "../../lib/config";
-import { getDiasDosFarmers, getTrocasPendentes, getOrientacoes, getHistoricoCarteira } from "../../lib/db";
+import { getDiasDosFarmers, getTrocasPendentes, getOrientacoes, getHistoricoCarteira, getBriefingsCarteira } from "../../lib/db";
+import { resumoDoMes } from "../../lib/metricas-farmer";
 import { situacaoDoDia, placarDoDia, montaHistorico, precisaAuxilio } from "../../lib/carteira";
 import AgendaFarmers from "../AgendaFarmers";
 import { ehGestor, segmentosDe, podeGerirCloser, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
@@ -79,13 +80,20 @@ export default async function AgendaGeral({ searchParams }) {
   // O time de CS não trabalha briefing de negócios: a agenda dele é a carteira.
   const ehFarmer = seg === SEG_TRAMITACOES;
   let farmersDoDia = null;
+  let resumoTime = null;
   if (ehFarmer) {
     const idsTime = closersDe(seg, equipe).map((c) => c.id);
-    const [dias, trocas, orientacoes] = await Promise.all([
+    const [dias, trocas, orientacoes, briefs] = await Promise.all([
       getDiasDosFarmers(idsTime, dia),
       getTrocasPendentes(idsTime),
       getOrientacoes(idsTime),
+      getBriefingsCarteira(idsTime, dia),
     ]);
+    // Números do time no topo. Falha aqui não derruba a agenda.
+    resumoTime = await resumoDoMes(idsTime, dia).catch((e) => {
+      console.error("[agenda] resumo do time falhou:", e?.message);
+      return null;
+    });
     // O histórico é por farmer: sem ele não dá para saber quem pediu auxílio.
     const historicos = await Promise.all(idsTime.map((id) => getHistoricoCarteira(id, dia)));
     farmersDoDia = closersDe(seg, equipe).map((c, i) => {
@@ -105,6 +113,7 @@ export default async function AgendaGeral({ searchParams }) {
           orientacao: orientacoes[c.id]?.[e.id] || null,
         })),
         trocas: (trocas[c.id] || []).map((t) => ({ ...t, url: empresaUrl(t.id) })),
+        brief: briefs[c.id] || null,
       };
     });
   }
@@ -171,7 +180,7 @@ export default async function AgendaGeral({ searchParams }) {
       )}
 
       {farmersDoDia && (
-        <AgendaFarmers farmers={farmersDoDia} diaLabel={dayLabel(dia)} />
+        <AgendaFarmers farmers={farmersDoDia} diaLabel={dayLabel(dia)} dia={dia} resumo={resumoTime} />
       )}
 
       {!farmersDoDia && dbReady() && semBriefing.length > 0 && (

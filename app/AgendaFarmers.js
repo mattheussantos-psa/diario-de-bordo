@@ -110,7 +110,57 @@ function Auxilio({ e, ownerId }) {
   );
 }
 
-export default function AgendaFarmers({ farmers, diaLabel }) {
+const brl = (n) => "R$ " + Number(n || 0).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+
+// O líder comenta o dia do farmer. O comentário é do dia, não da empresa.
+function Comentario({ ownerId, dia, inicial }) {
+  const [texto, setTexto] = useState(inicial?.comentario || "");
+  const [salvo, setSalvo] = useState(!!inicial?.comentario);
+  const [busy, setBusy] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function salvar() {
+    setBusy(true);
+    setErro("");
+    try {
+      const res = await fetch("/api/carteira/lider", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "comentario", ownerId, dia, texto }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Falha ao salvar.");
+      }
+      setSalvo(true);
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <details className="dia-comentario">
+      <summary>{salvo ? "Comentário enviado" : "Comentar o dia"}</summary>
+      <textarea
+        className="obs"
+        placeholder="O que este dia diz?"
+        value={texto}
+        onChange={(e) => { setTexto(e.target.value); setSalvo(false); }}
+      />
+      <div className="fech-rodape">
+        {erro && <span className="err">{erro}</span>}
+        {inicial?.comentadoPor && salvo && <span className="fech-opcional">por {inicial.comentadoPor}</span>}
+        <button className="btn-ghost" onClick={salvar} disabled={busy || salvo || !texto.trim()}>
+          {salvo ? "Enviado" : "Enviar"}
+        </button>
+      </div>
+    </details>
+  );
+}
+
+export default function AgendaFarmers({ farmers, diaLabel, dia, resumo }) {
   const [resolvidas, setResolvidas] = useState({});
 
   const trocas = farmers.flatMap((f) =>
@@ -124,6 +174,15 @@ export default function AgendaFarmers({ farmers, diaLabel }) {
 
   return (
     <>
+      {resumo && (
+        <div className="kpis">
+          <div className="kpi"><div className="lab">Oportunidades no mês</div><div className="val a">{resumo.oportunidades}</div><div className="sub">criadas pelo time</div></div>
+          <div className="kpi"><div className="lab">Receita gerada</div><div className="val">{brl(resumo.receita)}</div><div className="sub">negócios ganhos no mês</div></div>
+          <div className="kpi"><div className="lab">Tickets ativos</div><div className="val">{resumo.ticketsAtivos}</div><div className="sub">eventos em execução</div></div>
+          <div className="kpi"><div className="lab">Carteira tocada</div><div className="val o">{resumo.pctContato}%</div><div className="sub">{resumo.comContato} de {resumo.carteira} empresas no mês</div></div>
+        </div>
+      )}
+
       {trocas.length > 0 && (
         <div className="painel-troca">
           <div className="painel-titulo">
@@ -191,6 +250,8 @@ export default function AgendaFarmers({ farmers, diaLabel }) {
             ) : (
               <div className="dia-vazio">Ainda não abriu o diário hoje</div>
             )}
+
+            <Comentario ownerId={f.ownerId} dia={dia} inicial={f.brief} />
           </div>
         ))}
       </div>

@@ -162,7 +162,7 @@ export default async function Page({ searchParams }) {
   if (ehFarmer && viewOwner) {
     try {
       const [{ itens }, linhas] = await Promise.all([
-        listaDoDia(String(viewOwner.ownerId), dayKey()),
+        listaDoDia(String(viewOwner.ownerId), dayKey(), { registraAcesso: !gestor }),
         getHistoricoCarteira(String(viewOwner.ownerId), dayKey()),
       ]);
       const historico = montaHistorico(linhas);

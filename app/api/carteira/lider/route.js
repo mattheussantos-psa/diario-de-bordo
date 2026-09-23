@@ -1,5 +1,5 @@
 import { auth } from "../../../../auth";
-import { decidirTroca, salvarOrientacao, dbReady } from "../../../../lib/db";
+import { decidirTroca, salvarOrientacao, comentarDia, dbReady } from "../../../../lib/db";
 import { podeGerirCloser } from "../../../../lib/permissoes";
 
 const quem = (s) => s.user.name || s.user.email;
@@ -11,8 +11,13 @@ export async function POST(req) {
   if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });
   if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
 
-  const { acao, ownerId, companyId, decisao, texto } = await req.json().catch(() => ({}));
-  if (!ownerId || !companyId) return Response.json({ error: "Dados incompletos." }, { status: 400 });
+  const body = await req.json().catch(() => ({}));
+  const { acao, ownerId, companyId, decisao, texto, dia } = body;
+  if (!ownerId) return Response.json({ error: "Dados incompletos." }, { status: 400 });
+  // Comentar o dia é sobre o dia inteiro, não sobre uma empresa.
+  if (acao !== "comentario" && !companyId) {
+    return Response.json({ error: "Dados incompletos." }, { status: 400 });
+  }
   if (!podeGerirCloser(session.user, ownerId)) {
     return Response.json({ error: "Esse farmer não é do seu time." }, { status: 403 });
   }
@@ -34,6 +39,13 @@ export async function POST(req) {
         return Response.json({ error: "Escreva a orientação." }, { status: 400 });
       }
       await salvarOrientacao(ownerId, companyId, t, quem(session));
+      return Response.json({ ok: true });
+    }
+
+    if (acao === "comentario") {
+      const t = String(texto || "").trim();
+      if (!t) return Response.json({ error: "Escreva o comentário." }, { status: 400 });
+      await comentarDia(ownerId, dia, t, quem(session));
       return Response.json({ ok: true });
     }
 
