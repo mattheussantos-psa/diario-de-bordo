@@ -112,12 +112,35 @@ function Auxilio({ e, ownerId }) {
 
 const brl = (n) => "R$ " + Number(n || 0).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 
-// O líder comenta o dia do farmer. O comentário é do dia, não da empresa.
+// O líder comenta e revisa o dia do farmer. Revisar é separado de comentar:
+// dá para revisar sem escrever nada, e comentar sem ter revisado.
 function Comentario({ ownerId, dia, inicial }) {
   const [texto, setTexto] = useState(inicial?.comentario || "");
   const [salvo, setSalvo] = useState(!!inicial?.comentario);
+  const [revisado, setRevisado] = useState(!!inicial?.revisado);
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
+
+  async function revisar() {
+    setBusy(true);
+    setErro("");
+    try {
+      const res = await fetch("/api/carteira/lider", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "revisado", ownerId, dia }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Falha ao marcar.");
+      }
+      setRevisado(true);
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function salvar() {
     setBusy(true);
@@ -142,7 +165,20 @@ function Comentario({ ownerId, dia, inicial }) {
 
   return (
     <details className="dia-comentario">
-      <summary>{salvo ? "Comentário enviado" : "Comentar o dia"}</summary>
+      <summary>
+        {revisado ? "Dia revisado" : salvo ? "Comentário enviado" : "Comentar ou revisar"}
+      </summary>
+      <div className="dia-revisar">
+        {revisado ? (
+          <span className="fech-ok">
+            revisado{inicial?.revisadoPor ? ` por ${inicial.revisadoPor}` : ""}
+          </span>
+        ) : (
+          <button className="btn-ghost" onClick={revisar} disabled={busy}>
+            Marcar como revisado
+          </button>
+        )}
+      </div>
       <textarea
         className="obs"
         placeholder="O que este dia diz?"
@@ -168,6 +204,24 @@ export default function AgendaFarmers({ farmers, diaLabel, dia, resumo }) {
       .filter((t) => !resolvidas[f.ownerId + "|" + t.id])
       .map((t) => ({ ...t, ownerId: f.ownerId, farmer: f.nome }))
   );
+  // Agrupa por equipe, na ordem em que os farmers chegam do cadastro.
+  const grupos = [];
+  for (const f of farmers) {
+    const chave = f.equipe || "Sem equipe";
+    let g = grupos.find((x) => x.equipe === chave);
+    if (!g) {
+      g = { equipe: chave, farmers: [] };
+      grupos.push(g);
+    }
+    g.farmers.push(f);
+  }
+  for (const g of grupos) {
+    const total = g.farmers.reduce((s, f) => s + f.placar.total, 0);
+    const efetivo = g.farmers.reduce((s, f) => s + f.placar.efetivo, 0);
+    g.pct = total ? Math.round((efetivo / total) * 100) : 0;
+    g.fechados = g.farmers.filter((f) => f.situacao.chave === "fechado").length;
+  }
+
   const auxilios = farmers.flatMap((f) =>
     (f.itens || []).filter((e) => e.precisaAuxilio).map((e) => ({ ...e, ownerId: f.ownerId, farmer: f.nome }))
   );
@@ -219,6 +273,28 @@ export default function AgendaFarmers({ farmers, diaLabel, dia, resumo }) {
         </div>
       )}
 
+      {/* Quem enxerga mais de uma equipe vê cada uma com o próprio subtotal —
+          sem isso, 17 cartões viram uma lista sem dono. */}
+      {grupos.length > 1
+        ? grupos.map((g) => (
+            <div key={g.equipe}>
+              <div className="grupo-cab">
+                <span className="grupo-nome">{g.equipe}</span>
+                <span className="grupo-nums">
+                  {g.farmers.length} farmer{g.farmers.length === 1 ? "" : "s"} ·{" "}
+                  <b>{g.pct}%</b> efetivo · {g.fechados} de {g.farmers.length} com o dia fechado
+                </span>
+              </div>
+              <Cartoes farmers={g.farmers} dia={dia} />
+            </div>
+          ))
+        : <Cartoes farmers={farmers} dia={dia} />}
+    </>
+  );
+}
+
+function Cartoes({ farmers, dia }) {
+  return (
       <div className="dia-grid">
         {farmers.map((f) => (
           <div className={"dia-card st-" + (STATUS_CLS[f.situacao.chave] || "rascunho")} key={f.ownerId}>
@@ -255,6 +331,5 @@ export default function AgendaFarmers({ farmers, diaLabel, dia, resumo }) {
           </div>
         ))}
       </div>
-    </>
   );
 }

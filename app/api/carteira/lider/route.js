@@ -1,5 +1,5 @@
 import { auth } from "../../../../auth";
-import { decidirTroca, salvarOrientacao, comentarDia, dbReady } from "../../../../lib/db";
+import { decidirTroca, salvarOrientacao, comentarDia, marcarRevisado, dbReady } from "../../../../lib/db";
 import { podeGerirCloser } from "../../../../lib/permissoes";
 
 const quem = (s) => s.user.name || s.user.email;
@@ -14,8 +14,8 @@ export async function POST(req) {
   const body = await req.json().catch(() => ({}));
   const { acao, ownerId, companyId, decisao, texto, dia } = body;
   if (!ownerId) return Response.json({ error: "Dados incompletos." }, { status: 400 });
-  // Comentar o dia é sobre o dia inteiro, não sobre uma empresa.
-  if (acao !== "comentario" && !companyId) {
+  // Comentar e revisar são sobre o dia inteiro, não sobre uma empresa.
+  if (!["comentario", "revisado"].includes(acao) && !companyId) {
     return Response.json({ error: "Dados incompletos." }, { status: 400 });
   }
   if (!podeGerirCloser(session.user, ownerId)) {
@@ -46,6 +46,11 @@ export async function POST(req) {
       const t = String(texto || "").trim();
       if (!t) return Response.json({ error: "Escreva o comentário." }, { status: 400 });
       await comentarDia(ownerId, dia, t, quem(session));
+      return Response.json({ ok: true });
+    }
+
+    if (acao === "revisado") {
+      await marcarRevisado(ownerId, dia, quem(session));
       return Response.json({ ok: true });
     }
 

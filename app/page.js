@@ -24,7 +24,7 @@ import { resumoDoMes } from "../lib/metricas-farmer";
 import { atividadeDoDia } from "../lib/atividade";
 import { empresasComSelo } from "../lib/relacionamento";
 import { montaHistorico, precisaAuxilio, placarDoDia } from "../lib/carteira";
-import { getHistoricoCarteira } from "../lib/db";
+import { getHistoricoCarteira, aplicarAtividade, getListaDia } from "../lib/db";
 import { SEG_TRAMITACOES, empresaUrl } from "../lib/config";
 
 export const dynamic = "force-dynamic";
@@ -161,7 +161,7 @@ export default async function Page({ searchParams }) {
   let resumoMes = null;
   if (ehFarmer && viewOwner) {
     try {
-      const [{ itens }, linhas] = await Promise.all([
+      let [{ itens }, linhas] = await Promise.all([
         listaDoDia(String(viewOwner.ownerId), dayKey(), { registraAcesso: !gestor }),
         getHistoricoCarteira(String(viewOwner.ownerId), dayKey()),
       ]);
@@ -174,12 +174,17 @@ export default async function Page({ searchParams }) {
       });
       // O que o CRM já sabe do dia: vira sugestão de resultado no fechamento.
       // Falha aqui (escopo, cota) só faz o farmer preencher à mão.
-      const ativ = isFechar
-        ? (await atividadeDoDia([String(viewOwner.ownerId)], dayKey()).catch((err) => {
-            console.error("[carteira] atividade do dia falhou:", err?.message);
-            return {};
-          }))[String(viewOwner.ownerId)] || {}
-        : {};
+      // A efetividade é automática: o que o CRM registrou hoje vira o resultado
+      // sem ninguém clicar, e é por isso que o placar do líder evolui sozinho.
+      const ativ =
+        (await atividadeDoDia([String(viewOwner.ownerId)], dayKey()).catch((err) => {
+          console.error("[carteira] atividade do dia falhou:", err?.message);
+          return {};
+        }))[String(viewOwner.ownerId)] || {};
+      // Preenche só o que está em branco — nunca sobrescreve escolha manual.
+      await aplicarAtividade(String(viewOwner.ownerId), dayKey(), ativ).catch((err) =>
+        console.error("[carteira] não consegui aplicar a atividade:", err?.message)
+      );
 
       // Selo de relacionamento: raro de propósito, e caro de apurar — falha
       // aqui só tira o selo, não derruba o dia.
@@ -189,6 +194,9 @@ export default async function Page({ searchParams }) {
           return new Set();
         }
       );
+
+      // Relê depois de aplicar, senão a tela mostra o estado anterior.
+      itens = await getListaDia(String(viewOwner.ownerId), dayKey());
 
       carteiraDoDia = itens.map((e) => ({
         ...e,

@@ -1,6 +1,6 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
-import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, dbReady } from "../../../lib/db";
+import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, dbReady } from "../../../lib/db";
 import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO } from "../../../lib/carteira";
 import { dayKey } from "../../../lib/week";
 import { podeGerirCloser } from "../../../lib/permissoes";
@@ -95,6 +95,10 @@ export async function PATCH(req) {
     // O pedido é o que segura a empresa fora do rodízio até o líder decidir.
     if (resultado === "trocar_segmento") {
       await pedirTroca(ownerId, companyId, body.nome || null, observacao);
+    } else {
+      // Mudou de ideia: o pedido em aberto some e a empresa volta ao rodízio.
+      // Pedido já decidido pelo líder fica como está.
+      await cancelarTrocaPendente(ownerId, companyId);
     }
   } catch (e) {
     console.error("[carteira] falha ao salvar o resultado:", e);

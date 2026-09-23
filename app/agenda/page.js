@@ -7,6 +7,8 @@ import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe, EQUIPES_DE, closersDe, semEquipe, SEG_TRAMITACOES, empresaUrl } from "../../lib/config";
 import { getDiasDosFarmers, getTrocasPendentes, getOrientacoes, getHistoricoCarteira, getBriefingsCarteira } from "../../lib/db";
 import { resumoDoMes } from "../../lib/metricas-farmer";
+import { atividadeDoDia } from "../../lib/atividade";
+import { aplicarAtividade } from "../../lib/db";
 import { situacaoDoDia, placarDoDia, montaHistorico, precisaAuxilio } from "../../lib/carteira";
 import AgendaFarmers from "../AgendaFarmers";
 import { ehGestor, segmentosDe, podeGerirCloser, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
@@ -83,6 +85,17 @@ export default async function AgendaGeral({ searchParams }) {
   let resumoTime = null;
   if (ehFarmer) {
     const idsTime = closersDe(seg, equipe).map((c) => c.id);
+    // Antes de montar os cartões: o que o CRM registrou hoje vira resultado.
+    // Uma busca por tipo para o time inteiro — uma por farmer inviabilizaria
+    // a tela.
+    const ativTime = await atividadeDoDia(idsTime, dia).catch((e) => {
+      console.error("[agenda] atividade do time falhou:", e?.message);
+      return {};
+    });
+    for (const id of idsTime) {
+      await aplicarAtividade(id, dia, ativTime[id] || {}).catch(() => {});
+    }
+
     const [dias, trocas, orientacoes, briefs] = await Promise.all([
       getDiasDosFarmers(idsTime, dia),
       getTrocasPendentes(idsTime),
@@ -102,6 +115,7 @@ export default async function AgendaGeral({ searchParams }) {
       return {
         ownerId: c.id,
         nome: c.nome,
+        equipe: c.equipe || "",
         foto: fotoDe(c.id),
         situacao: situacaoDoDia(itens),
         placar: placarDoDia(itens),
