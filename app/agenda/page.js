@@ -147,7 +147,10 @@ export default async function AgendaGeral({ searchParams }) {
           <div>
             <div className="title">Agenda do dia</div>
             <div className="subtitle">
-              {dayLabel(dia)} · {enviaram} de {time.length} closers · {totalNeg} negócio{totalNeg === 1 ? "" : "s"}
+              {dayLabel(dia)} ·{" "}
+              {ehFarmer
+                ? `${farmersDoDia.filter((f) => f.itens.length > 0).length} de ${farmersDoDia.length} farmers com lista hoje`
+                : `${enviaram} de ${time.length} closers · ${totalNeg} negócio${totalNeg === 1 ? "" : "s"}`}
             </div>
           </div>
         </div>
@@ -165,7 +168,7 @@ export default async function AgendaGeral({ searchParams }) {
           <Link href="/">Diário de bordo</Link>
           <Link href="/aprovacoes">Aprovações</Link>
           <Link href="/agenda" className="on">Agenda do dia</Link>
-          {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
+          {ehFarmer && podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
           {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
         </div>
         <div className="seg-toggle">

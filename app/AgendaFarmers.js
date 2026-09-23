@@ -297,7 +297,7 @@ function Cartoes({ farmers, dia }) {
   return (
       <div className="dia-grid">
         {farmers.map((f) => (
-          <div className={"dia-card st-" + (STATUS_CLS[f.situacao.chave] || "rascunho")} key={f.ownerId}>
+          <div className={"dia-card farmer st-" + (STATUS_CLS[f.situacao.chave] || "rascunho")} key={f.ownerId}>
             <div className="dia-cab">
               <span className="aprov-pfp">
                 {f.foto ? <img src={f.foto} alt={f.nome} /> : f.nome.slice(0, 2).toUpperCase()}

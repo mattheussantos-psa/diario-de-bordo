@@ -314,7 +314,8 @@ export default async function Page({ searchParams }) {
                 Aprovações{pendentes > 0 ? ` (${pendentes})` : ""}
               </Link>
               <Link href="/agenda">Agenda geral</Link>
-              {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
+              {/* Evolução é da carteira: só faz sentido dentro do segmento de CS. */}
+              {ehFarmer && podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
               {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
             </div>
           </div>
