@@ -4,7 +4,7 @@ import { auth, signOut } from "../../auth";
 import { getDealsByIds } from "../../lib/hubspot";
 import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
-import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe } from "../../lib/config";
+import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe, EQUIPES_DE, closersDe, semEquipe } from "../../lib/config";
 import { ehGestor, segmentosDe, podeGerirCloser } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +40,9 @@ export default async function AgendaGeral({ searchParams }) {
   // Ordem por urgência para o gestor: o que espera decisão primeiro, quem não
   // enviou por último. Dentro do mesmo grupo, mantém a ordem do cadastro.
   const PESO = { enviado: 0, reprovado: 1, aprovado: 2, rascunho: 3 };
-  const time = (CLOSERS[seg] || [])
+  // A grade segue a equipe escolhida; sem equipe, o time inteiro.
+  const equipe = searchParams?.equipe || "";
+  const time = closersDe(seg, equipe)
     .map((c, i) => {
       const briefing = porOwner[c.id] || null;
       const temItens = briefing && Object.keys(briefing.items).length > 0;
@@ -108,6 +110,14 @@ export default async function AgendaGeral({ searchParams }) {
             <Link key={s} href={`/agenda?seg=${s}`} className={seg === s ? "on" : ""}>{s}</Link>
           ))}
         </div>
+        {EQUIPES_DE(seg).length > 0 && (
+          <div className="seg-toggle">
+            <Link href={`/agenda?seg=${seg}`} className={equipe ? "" : "on"}>Todas</Link>
+            {EQUIPES_DE(seg).map((e) => (
+              <Link key={e} href={`/agenda?seg=${seg}&equipe=${encodeURIComponent(e)}`} className={equipe === e ? "on" : ""}>{e}</Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {!dbReady() && <div className="card"><div className="cal-empty">Banco não configurado.</div></div>}

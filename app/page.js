@@ -5,7 +5,7 @@ import {
   getOpenDeals,
   getTemperaturaOptions,
 } from "../lib/hubspot";
-import { fotoDe, dealUrl, CLOSERS_BY_SEG, CLOSERS, SEG_CLOSER, SEGMENTOS, PIPELINES_POR_SEG } from "../lib/config";
+import { fotoDe, dealUrl, CLOSERS_BY_SEG, CLOSERS, SEG_CLOSER, SEGMENTOS, PIPELINES_POR_SEG, EQUIPES_DE, closersDe, semEquipe } from "../lib/config";
 import DealsTable from "./DealsTable";
 import AdminBar from "./AdminBar";
 import FocoDia from "./FocoDia";
@@ -95,7 +95,8 @@ export default async function Page({ searchParams }) {
 
   if (gestor) {
     // Lista fixa dos closers do segmento (evita varrer os owners do HubSpot).
-    owners = (CLOSERS[seg] || []).map((c) => ({ ownerId: c.id, name: c.nome }));
+    // A lista do seletor respeita a equipe escolhida.
+    owners = closersDe(seg, searchParams?.equipe).map((c) => ({ ownerId: c.id, name: c.nome }));
     // Líder é closer também: sem seleção, abre no próprio funil.
     const proprio = !isAdmin ? await getOwnerByEmail(email).catch(() => null) : null;
     meuOwnerId = proprio?.ownerId || null;
@@ -150,6 +151,7 @@ export default async function Page({ searchParams }) {
   const qs = (view) => {
     const q = new URLSearchParams();
     if (searchParams?.closer) q.set("closer", searchParams.closer);
+    if (searchParams?.equipe) q.set("equipe", searchParams.equipe);
     q.set("seg", seg);
     if (view) q.set("view", view);
     return "/?" + q.toString();
@@ -234,6 +236,9 @@ export default async function Page({ searchParams }) {
             seg={seg}
             segs={meusSegs}
             papel={isAdmin ? "Admin" : "Líder " + seg}
+            equipes={EQUIPES_DE(seg)}
+            equipe={searchParams?.equipe || ""}
+            semEquipe={semEquipe(seg)}
           />
         </>
       ) : (

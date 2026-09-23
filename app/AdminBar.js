@@ -2,7 +2,16 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AdminBar({ owners, selected, seg, segs = [], papel = "Admin" }) {
+export default function AdminBar({
+  owners,
+  selected,
+  seg,
+  segs = [],
+  papel = "Admin",
+  equipes = [],
+  equipe = "",
+  semEquipe = 0,
+}) {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -40,12 +49,40 @@ export default function AdminBar({ owners, selected, seg, segs = [], papel = "Ad
             <button
               key={val}
               className={seg === val ? "on" : ""}
-              onClick={() => nav({ seg: val })}
+              // Trocar de segmento zera a equipe: as equipes são de cada um.
+              onClick={() => nav({ seg: val, equipe: "", closer: "" })}
             >
               {val}
             </button>
           ))}
         </div>
+        )}
+
+        {equipes.length > 0 && (
+          <div className="seg-toggle">
+            <button
+              className={equipe ? "" : "on"}
+              onClick={() => nav({ equipe: "", closer: "" })}
+            >
+              Todas
+            </button>
+            {equipes.map((val) => (
+              <button
+                key={val}
+                className={equipe === val ? "on" : ""}
+                onClick={() => nav({ equipe: val, closer: "" })}
+              >
+                {val}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Sem isto, quem ficou sem equipe sumiria do filtro sem explicação. */}
+        {!equipe && semEquipe > 0 && (
+          <span className="plan-motivo">
+            {semEquipe} sem equipe — aparecem só em “Todas”
+          </span>
         )}
       </div>
     </div>
