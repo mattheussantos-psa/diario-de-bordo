@@ -5,16 +5,26 @@ import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO } from "../
 import { dayKey } from "../../../lib/week";
 import { podeGerirCloser } from "../../../lib/permissoes";
 
-// De quem é o dia: o próprio farmer, ou o líder abrindo o dia de alguém dele.
+// De quem é o dia e quem está mexendo nele. Quando o líder edita o dia de um
+// farmer, o nome dele fica registrado: a alteração precisa aparecer para quem
+// planejou, com o autor.
 async function resolveOwner(session, bodyOwnerId) {
-  if (bodyOwnerId && podeGerirCloser(session.user, bodyOwnerId)) return String(bodyOwnerId);
+  let meu = null;
   try {
     const owner = await getOwnerByEmail(session.user.email.toLowerCase());
-    return owner ? String(owner.ownerId) : null;
+    meu = owner ? String(owner.ownerId) : null;
   } catch (e) {
     console.error("[carteira] HubSpot falhou ao identificar o farmer:", e);
-    throw new Error("Não foi possível falar com o HubSpot para identificar você.");
+    // Sem o próprio owner ainda dá para o líder agir sobre um farmer do time;
+    // só não dá para o farmer agir sobre o próprio dia.
+    if (!bodyOwnerId) throw new Error("Não foi possível falar com o HubSpot para identificar você.");
   }
+
+  if (bodyOwnerId && podeGerirCloser(session.user, bodyOwnerId)) {
+    const dono = String(bodyOwnerId);
+    return { ownerId: dono, editor: dono === meu ? null : session.user.name || session.user.email };
+  }
+  return { ownerId: meu, editor: null };
 }
 
 export async function POST(req) {
@@ -23,22 +33,22 @@ export async function POST(req) {
   if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
-  let ownerId;
+  let ownerId, editor;
   try {
-    ownerId = await resolveOwner(session, body.ownerId);
+    ({ ownerId, editor } = await resolveOwner(session, body.ownerId));
   } catch (e) {
     return Response.json({ error: e.message }, { status: 503 });
   }
   if (!ownerId) return Response.json({ error: "Farmer não encontrado." }, { status: 403 });
 
-  const { companyId, abordagem } = body;
+  const { companyId, abordagem, contexto } = body;
   if (!companyId) return Response.json({ error: "Informe a empresa." }, { status: 400 });
   if (abordagem && !ABORDAGENS.includes(abordagem)) {
     return Response.json({ error: "Abordagem inválida." }, { status: 400 });
   }
 
   try {
-    const achou = await salvarAbordagem(ownerId, body.dia || dayKey(), companyId, abordagem);
+    const achou = await salvarAbordagem(ownerId, body.dia || dayKey(), companyId, abordagem, contexto, editor);
     if (!achou) {
       return Response.json({ error: "Essa empresa não está na lista de hoje." }, { status: 400 });
     }
@@ -57,9 +67,9 @@ export async function PATCH(req) {
   if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
-  let ownerId;
+  let ownerId, editor;
   try {
-    ownerId = await resolveOwner(session, body.ownerId);
+    ({ ownerId, editor } = await resolveOwner(session, body.ownerId));
   } catch (e) {
     return Response.json({ error: e.message }, { status: 503 });
   }
@@ -80,7 +90,7 @@ export async function PATCH(req) {
   }
 
   try {
-    const achou = await salvarResultadoCarteira(ownerId, body.dia || dayKey(), companyId, resultado, observacao);
+    const achou = await salvarResultadoCarteira(ownerId, body.dia || dayKey(), companyId, resultado, observacao, editor);
     if (!achou) return Response.json({ error: "Essa empresa não está na lista de hoje." }, { status: 400 });
     // O pedido é o que segura a empresa fora do rodízio até o líder decidir.
     if (resultado === "trocar_segmento") {

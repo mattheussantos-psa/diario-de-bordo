@@ -18,8 +18,28 @@ function historicoTexto(h) {
 
 function Card({ e, ctx, onAbordagem }) {
   const [abordagem, setAbordagem] = useState(e.abordagem || "");
+  const [contexto, setContexto] = useState(e.contexto || "");
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
+
+  // Salva ao sair do campo: digitar não pode disparar uma chamada por tecla.
+  async function salvarContexto() {
+    if (contexto === (e.contexto || "")) return;
+    try {
+      const res = await fetch("/api/carteira", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: ctx.ownerId, dia: ctx.dia, companyId: e.id, contexto }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Falha ao salvar o contexto.");
+      }
+      setErro("");
+    } catch (err) {
+      setErro(err.message);
+    }
+  }
 
   async function escolher(valor) {
     const anterior = abordagem;
@@ -87,6 +107,20 @@ function Card({ e, ctx, onAbordagem }) {
           ))}
         </select>
       </div>
+
+      {/* Contexto é opcional: serve para chegar na conversa sabendo do que
+          falar, e para o líder entender a escolha depois. */}
+      <textarea
+        className="obs emp-contexto"
+        placeholder="Contexto (opcional): o que você já sabe desta empresa?"
+        value={contexto}
+        onChange={(ev) => setContexto(ev.target.value)}
+        onBlur={salvarContexto}
+      />
+
+      {e.editadoPor && (
+        <span className="emp-editado">ajustado por {e.editadoPor}</span>
+      )}
       {erro && <span className="err">{erro}</span>}
     </div>
   );
