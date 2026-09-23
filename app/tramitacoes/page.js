@@ -6,7 +6,7 @@ import { getTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
 import { ehGestor, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
-import { PIPELINE_CS, ETAPAS_ENCERRADAS, pendenciasDoTicket, TIPOS } from "../../lib/tramitacoes";
+import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPAS_TICKET, pendenciasDoTicket, TIPOS } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +38,7 @@ export default async function Tramitacoes({ searchParams }) {
   let tickets = [];
   let erro = null;
   try {
-    tickets = await getTicketsCS(PIPELINE_CS, ETAPAS_ENCERRADAS);
+    tickets = await getTicketsCS(PIPELINE_CS, ETAPAS_TRAMITACAO);
   } catch (e) {
     console.error("[tramitacoes] falha ao buscar tickets:", e);
     erro = e;

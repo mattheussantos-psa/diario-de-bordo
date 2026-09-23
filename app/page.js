@@ -11,12 +11,17 @@ import AdminBar from "./AdminBar";
 import FocoDia from "./FocoDia";
 import Ontem from "./Ontem";
 import Fechamento from "./Fechamento";
+import ListaDoDia from "./ListaDoDia";
 import Link from "next/link";
 import { getBriefing, getDayBriefings, getFechamento, dbReady } from "../lib/db";
 import { getDealsByIds } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada } from "../lib/permissoes";
+import { listaDoDia } from "../lib/dia-farmer";
+import { montaHistorico, precisaAuxilio } from "../lib/carteira";
+import { getHistoricoCarteira } from "../lib/db";
+import { SEG_TRAMITACOES, empresaUrl } from "../lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -143,7 +148,29 @@ export default async function Page({ searchParams }) {
     }
   }
 
-  if (erroHubspot && deals.length === 0) return <ErroHubspot erro={erroHubspot} />;
+  // Farmer trabalha empresas da própria carteira, não negócios do funil.
+  const ehFarmer = seg === SEG_TRAMITACOES;
+  let carteiraDoDia = null;
+  if (ehFarmer && viewOwner) {
+    try {
+      const [{ itens }, linhas] = await Promise.all([
+        listaDoDia(String(viewOwner.ownerId), dayKey()),
+        getHistoricoCarteira(String(viewOwner.ownerId), dayKey()),
+      ]);
+      const historico = montaHistorico(linhas);
+      carteiraDoDia = itens.map((e) => ({
+        ...e,
+        url: empresaUrl(e.id),
+        historico: historico.get(String(e.id)) || null,
+        precisaAuxilio: precisaAuxilio(historico.get(String(e.id))),
+      }));
+    } catch (e) {
+      console.error("[carteira] falha ao montar o dia:", e);
+      erroHubspot = e;
+    }
+  }
+
+  if (erroHubspot && deals.length === 0 && !carteiraDoDia) return <ErroHubspot erro={erroHubspot} />;
 
   const dia = dayKey();
   const briefing = viewOwner ? await getBriefing(viewOwner.ownerId, dia) : null;
@@ -284,7 +311,16 @@ export default async function Page({ searchParams }) {
         </div>
       )}
 
-      {isFechar ? (
+      {carteiraDoDia ? (
+        <ListaDoDia
+          itens={carteiraDoDia}
+          ctx={{
+            ownerId: viewOwner ? String(viewOwner.ownerId) : "",
+            dia,
+            diaLabel: dayLabel(dia),
+          }}
+        />
+      ) : isFechar ? (
         <Fechamento
           rows={rows}
           briefing={briefing}

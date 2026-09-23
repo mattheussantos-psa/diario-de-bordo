@@ -608,3 +608,33 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
   background: var(--surface); padding: 12px 16px; }
 .tram-passados summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 600; }
 .tram-passados[open] summary { margin-bottom: 14px; }
+
+/* ------------------------------------------------------ lista do dia (CS) */
+.emp-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  border-left: 3px solid var(--line); }
+.emp-card.pronta { border-left-color: #17803d; }
+.emp-card.extra { background: var(--surface-2); }
+.emp-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.emp-balde { font-size: 10.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 6px; background: var(--ink-soft); color: var(--muted); }
+.emp-balde.b-recompra { background: var(--laranja-soft); color: var(--laranja); }
+.emp-balde.b-nutricao { background: var(--azul-soft); color: var(--azul); }
+.emp-balde.b-reativacao { background: #f4efe9; color: #a9702f; }
+.emp-balde.b-extra { background: #e8f6ed; color: #17803d; }
+.emp-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+  padding: 3px 8px; border-radius: 6px; background: var(--surface); color: var(--muted); }
+.emp-tag.auxilio { background: var(--laranja-soft); color: var(--laranja); }
+.emp-nome { font-size: 15px; font-weight: 700; color: var(--ink); text-decoration: none; line-height: 1.35; }
+.emp-nome:hover { color: var(--azul); }
+.emp-meta { color: var(--muted); font-size: 12px; display: flex; gap: 5px; flex-wrap: wrap; }
+.emp-hist { color: var(--laranja); }
+.emp-orientacao { background: var(--azul-soft); border-radius: 10px; padding: 9px 11px;
+  font-size: 12.5px; line-height: 1.4; }
+.emp-orientacao-autor { display: block; color: var(--muted); font-size: 11.5px; margin-top: 4px; }
+.emp-abordagem { appearance: none; width: 100%; font: inherit; font-size: 13px; font-weight: 600;
+  padding: 9px 30px 9px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); cursor: pointer; }
+.emp-card.pronta .emp-abordagem { background: #e8f6ed; border-color: #9ed5b4; }
+.emp-secao { margin: 22px 0 12px; font-size: 12.5px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .4px; }
