@@ -324,13 +324,16 @@ export default async function Page({ searchParams }) {
                 <>
                   <Link href="/agenda">Agenda do dia</Link>
                   {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
+                  {/* Sem contador aqui: o número exigiria buscar os tickets do
+                      funil só para desenhar o menu. */}
                   {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
                   <Link href="/ajuda">Como funciona</Link>
                 </>
               ) : (
                 <>
                   <Link href="/aprovacoes">
-                    Aprovações{pendentes > 0 ? ` (${pendentes})` : ""}
+                    Aprovações
+                    {pendentes > 0 && <span className="aba-cont">{pendentes}</span>}
                   </Link>
                   <Link href="/agenda">Agenda geral</Link>
                 </>
@@ -343,6 +346,7 @@ export default async function Page({ searchParams }) {
             seg={seg}
             segs={meusSegs}
             papel={isAdmin ? "Admin" : "Líder " + seg}
+            rotuloPessoa={ehFarmer ? "farmer" : "closer"}
             equipes={equipeTravada ? [] : EQUIPES_DE(seg)}
             equipe={equipeAtiva}
             semEquipe={equipeTravada ? 0 : semEquipe(seg)}

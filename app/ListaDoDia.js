@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ABORDAGENS, BALDES } from "../lib/carteira";
 
 // Contexto de quem já apareceu antes: é o que responde "por que ela voltou?".
@@ -16,112 +16,125 @@ function historicoTexto(h) {
   return r[h.ultimoResultado] || `apareceu em ${dia}, sem fechamento`;
 }
 
-function Card({ e, ctx, onAbordagem }) {
+const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "—");
+
+function Linha({ e, ctx, onAbordagem }) {
   const [abordagem, setAbordagem] = useState(e.abordagem || "");
   const [contexto, setContexto] = useState(e.contexto || "");
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
 
-  // Salva ao sair do campo: digitar não pode disparar uma chamada por tecla.
-  async function salvarContexto() {
-    if (contexto === (e.contexto || "")) return;
-    try {
-      const res = await fetch("/api/carteira", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: ctx.ownerId, dia: ctx.dia, companyId: e.id, contexto }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || "Falha ao salvar o contexto.");
-      }
-      setErro("");
-    } catch (err) {
-      setErro(err.message);
-    }
-  }
-
-  async function escolher(valor) {
-    const anterior = abordagem;
-    setAbordagem(valor);
+  async function salvar(campos) {
     setBusy(true);
     setErro("");
     try {
       const res = await fetch("/api/carteira", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: ctx.ownerId, dia: ctx.dia, companyId: e.id, abordagem: valor }),
+        body: JSON.stringify({ ownerId: ctx.ownerId, dia: ctx.dia, companyId: e.id, ...campos }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error || "Falha ao salvar.");
       }
-      onAbordagem(e.id, valor);
+      return true;
     } catch (err) {
-      setAbordagem(anterior); // não finge que salvou
       setErro(err.message);
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
+  async function escolher(valor) {
+    const anterior = abordagem;
+    setAbordagem(valor);
+    // Não finge que salvou: volta ao anterior se a gravação falhar.
+    if (await salvar({ abordagem: valor })) onAbordagem(e.id, valor);
+    else setAbordagem(anterior);
+  }
+
   const hist = historicoTexto(e.historico);
 
   return (
-    <div className={"emp-card b-" + e.balde + (e.extra ? " extra" : "") + (abordagem ? " pronta" : "")}>
-      <div className="emp-topo">
-        <span className={"emp-balde b-" + e.balde}>{BALDES[e.balde]?.label || e.balde}</span>
+    <tr className={abordagem ? "linha-pronta" : ""}>
+      <td className="deal">
         {e.extra && <span className="emp-tag">extra</span>}
-        {e.precisaAuxilio && <span className="emp-tag auxilio">auxílio do líder</span>}
-        {e.selo && <span className="emp-tag selo" title="Negócio registrado e mais de uma reunião de relacionamento com você">relacionamento</span>}
-      </div>
-
-      <a className="emp-nome" href={e.url} target="_blank" rel="noreferrer">{e.nome}</a>
-
-      <div className="emp-meta">
-        {e.ultimaCompra ? (
-          <span>última compra {e.ultimaCompra.slice(8, 10)}/{e.ultimaCompra.slice(5, 7)}/{e.ultimaCompra.slice(0, 4)}</span>
-        ) : (
-          <span>nunca contratou</span>
+        {e.precisaAuxilio && <span className="emp-tag auxilio">auxílio</span>}
+        {e.selo && (
+          <span className="emp-tag selo" title="Negócio registrado e mais de uma reunião de relacionamento com você">
+            relacionamento
+          </span>
         )}
-        {hist && <span className="emp-hist">· {hist}</span>}
-      </div>
+        <a className="deal-link" href={e.url} target="_blank" rel="noreferrer">{e.nome}</a>
+        {e.orientacao && (
+          <div className="emp-orientacao">
+            {e.orientacao.texto}
+            <span className="emp-orientacao-autor">— {e.orientacao.autor}</span>
+          </div>
+        )}
+      </td>
 
-      {e.orientacao && (
-        <div className="emp-orientacao">
-          {e.orientacao.texto}
-          <span className="emp-orientacao-autor">— {e.orientacao.autor}</span>
+      <td>
+        <span className={"emp-balde b-" + e.balde}>{BALDES[e.balde]?.label || e.balde}</span>
+      </td>
+
+      <td className="col-data">{dataBR(e.ultimaCompra)}</td>
+
+      <td className="col-hist">{hist || <span className="sem">primeira vez na lista</span>}</td>
+
+      <td>
+        <div className="select-wrap">
+          <select
+            className="emp-abordagem"
+            value={abordagem}
+            disabled={busy}
+            onChange={(ev) => escolher(ev.target.value)}
+          >
+            <option value="">Como vai abordar…</option>
+            {ABORDAGENS.map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
         </div>
-      )}
+        {erro && <span className="err">{erro}</span>}
+        {e.editadoPor && <span className="emp-editado">ajustado por {e.editadoPor}</span>}
+      </td>
 
-      <div className="select-wrap">
-        <select
-          className="emp-abordagem"
-          value={abordagem}
-          disabled={busy}
-          onChange={(ev) => escolher(ev.target.value)}
-        >
-          <option value="">Como vai abordar…</option>
-          {ABORDAGENS.map((a) => (
-            <option key={a} value={a}>{a}</option>
+      <td>
+        {/* Salva ao sair do campo: digitar não pode disparar uma chamada por tecla. */}
+        <textarea
+          className="obs emp-contexto"
+          placeholder="Contexto (opcional)"
+          value={contexto}
+          onChange={(ev) => setContexto(ev.target.value)}
+          onBlur={() => contexto !== (e.contexto || "") && salvar({ contexto })}
+        />
+      </td>
+    </tr>
+  );
+}
+
+function Tabela({ itens, ctx, onAbordagem }) {
+  return (
+    <div className="tscroll">
+      <table>
+        <thead>
+          <tr>
+            <th style={{ width: "26%" }}>Empresa</th>
+            <th style={{ width: "10%" }}>Fase</th>
+            <th style={{ width: "11%" }}>Última compra</th>
+            <th style={{ width: "17%" }}>Por que voltou</th>
+            <th style={{ width: "19%" }}>Abordagem</th>
+            <th style={{ width: "17%" }}>Contexto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {itens.map((e) => (
+            <Linha key={e.id} e={e} ctx={ctx} onAbordagem={onAbordagem} />
           ))}
-        </select>
-      </div>
-
-      {/* Contexto é opcional: serve para chegar na conversa sabendo do que
-          falar, e para o líder entender a escolha depois. */}
-      <textarea
-        className="obs emp-contexto"
-        placeholder="Contexto (opcional): o que você já sabe desta empresa?"
-        value={contexto}
-        onChange={(ev) => setContexto(ev.target.value)}
-        onBlur={salvarContexto}
-      />
-
-      {e.editadoPor && (
-        <span className="emp-editado">ajustado por {e.editadoPor}</span>
-      )}
-      {erro && <span className="err">{erro}</span>}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -133,12 +146,11 @@ export default function ListaDoDia({ itens, ctx }) {
     return m;
   });
 
-  const doCompromisso = useMemo(() => itens.filter((e) => !e.extra), [itens]);
-  const extras = useMemo(() => itens.filter((e) => e.extra), [itens]);
-
-  // A lista inteira é o compromisso, extras inclusive: o dia só começa com
-  // todas mapeadas.
+  const doCompromisso = itens.filter((e) => !e.extra);
+  const extras = itens.filter((e) => e.extra);
+  // A lista inteira é o compromisso, extras inclusive.
   const faltam = itens.filter((e) => !abordagens[e.id]).length;
+  const marcar = (id, v) => setAbordagens((a) => ({ ...a, [id]: v }));
 
   if (itens.length === 0) {
     return (
@@ -156,21 +168,20 @@ export default function ListaDoDia({ itens, ctx }) {
   }
 
   return (
-    <div className="foco">
-      <div className="foco-topo">
-        <div className="foco-resumo">
-          <span className="foco-dia">{ctx.diaLabel}</span>
-          <span className="foco-status">{doCompromisso.length} empresas + {extras.length} extras</span>
-        </div>
-        <div className="foco-nums">
+    <div className="card">
+      <div className="planbar">
+        <div className="planbar-info">
+          <span className="plan-week">{ctx.diaLabel}</span>
+          <span className="plan-badge">
+            {doCompromisso.length} empresas{extras.length ? ` + ${extras.length} extras` : ""}
+          </span>
           {faltam > 0 ? (
-            <span className="foco-alerta"><b>{faltam}</b> sem abordagem definida</span>
+            <span className="plan-motivo">{faltam} sem abordagem definida</span>
           ) : (
-            <span className="fech-ok">dia iniciado — todas mapeadas</span>
+            <span className="fech-ok">todas mapeadas</span>
           )}
-          {/* Cada abordagem já é salva ao ser escolhida; o dia começa quando
-              todas estão definidas. O botão leva ao passo seguinte em vez de
-              fingir que grava algo a mais. */}
+        </div>
+        <div className="planbar-actions">
           <a
             className={"btn-primary" + (faltam > 0 ? " desativado" : "")}
             href={faltam > 0 ? undefined : ctx.urlFechamento}
@@ -181,22 +192,14 @@ export default function ListaDoDia({ itens, ctx }) {
         </div>
       </div>
 
-      <div className="foco-grid">
-        {doCompromisso.map((e) => (
-          <Card key={e.id} e={e} ctx={ctx} onAbordagem={(id, v) => setAbordagens((a) => ({ ...a, [id]: v }))} />
-        ))}
-      </div>
+      <Tabela itens={doCompromisso} ctx={ctx} onAbordagem={marcar} />
 
       {extras.length > 0 && (
         <>
-          <div className="emp-secao">
+          <div className="tab-secao">
             Extras — clientes recentes, fora da conta das {doCompromisso.length}
           </div>
-          <div className="foco-grid">
-            {extras.map((e) => (
-              <Card key={e.id} e={e} ctx={ctx} onAbordagem={(id, v) => setAbordagens((a) => ({ ...a, [id]: v }))} />
-            ))}
-          </div>
+          <Tabela itens={extras} ctx={ctx} onAbordagem={marcar} />
         </>
       )}
     </div>

@@ -700,3 +700,38 @@ a.btn-primary.desativado { opacity: .45; pointer-events: none; }
 .grupo-nums { color: var(--muted); font-size: 12.5px; }
 .grupo-nums b { color: var(--ink); }
 .dia-revisar { margin-bottom: 8px; }
+/* Contador na aba: número colado no rótulo lê melhor que "(2)". */
+.viewtoggle a .aba-cont, .viewtoggle span .aba-cont {
+  display: inline-block; margin-left: 7px; background: var(--laranja); color: #fff;
+  font-size: 10.5px; font-weight: 800; line-height: 1; padding: 3px 6px; border-radius: 999px;
+  vertical-align: 1px; }
+.viewtoggle a.on .aba-cont { background: var(--azul); }
+
+/* -------------------------------------------- barra de contexto (filtros) */
+/* Cada filtro leva rótulo: três grupos de pílulas soltas lado a lado não
+   dizem o que fazem, e quem chega na tela tem de adivinhar. */
+.ctxbar { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; margin-bottom: 22px; }
+.ctxbar .admin-tag { align-self: center; }
+.ctx-campo { display: flex; flex-direction: column; gap: 6px; }
+.ctx-campo.cresce { min-width: 250px; }
+.ctx-lab { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+.ctx-cont { background: var(--ink-soft); color: var(--muted); border-radius: 999px;
+  padding: 1px 7px; font-size: 10px; font-weight: 700; }
+.ctxbar .closer-select { width: 100%; min-width: 0; }
+.ctx-limpar { align-self: center; border: 0; background: transparent; color: var(--muted);
+  font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0; }
+.ctx-limpar:hover { color: var(--ink); }
+
+/* ------------------------------------------- lista do dia em tabela (CS) */
+.linha-pronta { background: #f4fbf6; }
+.linha-pronta td:first-child { box-shadow: inset 4px 0 0 #17803d; }
+.col-data { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13px; }
+.col-hist { font-size: 12.5px; color: var(--laranja); line-height: 1.4; }
+.col-hist .sem { color: var(--muted); }
+.tab-secao { padding: 14px 18px 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .4px;
+  text-transform: uppercase; color: var(--muted); border-top: 1px solid var(--line); }
+td .emp-abordagem { min-width: 0; }
+td .emp-contexto { min-height: 44px; }
+td .emp-tag { margin-right: 6px; }
+td .emp-orientacao { margin-top: 6px; font-size: 12px; }
