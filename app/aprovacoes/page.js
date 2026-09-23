@@ -102,6 +102,7 @@ export default async function Aprovacoes({ searchParams }) {
           <Link href="/aprovacoes" className="on">Aprovações{pendentes.length ? ` (${pendentes.length})` : ""}</Link>
           <Link href="/agenda">Agenda geral</Link>
           <Link href="/evolucao">Evolução</Link>
+          <Link href="/tramitacoes">Tramitações</Link>
         </div>
         <div className="seg-toggle">
           {[["pendentes", "Aguardando"], ["decididos", "Decididos"], ["todos", "Todos"], ["historico", "Histórico"]].map(([v, l]) => (

@@ -106,6 +106,7 @@ export default async function Evolucao({ searchParams }) {
           <Link href="/aprovacoes">Aprovações</Link>
           <Link href="/agenda">Agenda geral</Link>
           <Link href="/evolucao" className="on">Evolução</Link>
+          <Link href="/tramitacoes">Tramitações</Link>
         </div>
         <div className="seg-toggle">
           {meusSegs.map((s) => (

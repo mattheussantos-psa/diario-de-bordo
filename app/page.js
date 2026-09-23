@@ -233,6 +233,7 @@ export default async function Page({ searchParams }) {
               </Link>
               <Link href="/agenda">Agenda geral</Link>
               <Link href="/evolucao">Evolução</Link>
+              <Link href="/tramitacoes">Tramitações</Link>
             </div>
           </div>
           <AdminBar
@@ -247,7 +248,11 @@ export default async function Page({ searchParams }) {
           />
         </>
       ) : (
-        <div className="bar">
+        <div className="viewbar">
+          <div className="viewtoggle">
+            <Link href="/" className="on">Diário de bordo</Link>
+            <Link href="/tramitacoes">Tramitações</Link>
+          </div>
           <div className="ctx"><span className="ctx-dot" />Segmento: {seg}</div>
         </div>
       )}

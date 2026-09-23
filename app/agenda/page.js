@@ -105,6 +105,7 @@ export default async function AgendaGeral({ searchParams }) {
           <Link href="/aprovacoes">Aprovações</Link>
           <Link href="/agenda" className="on">Agenda do dia</Link>
           <Link href="/evolucao">Evolução</Link>
+          <Link href="/tramitacoes">Tramitações</Link>
         </div>
         <div className="seg-toggle">
           {meusSegs.map((s) => (
