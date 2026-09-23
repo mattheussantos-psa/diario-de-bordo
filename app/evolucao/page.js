@@ -4,7 +4,7 @@ import { auth, signOut } from "../../auth";
 import { getEvolucao, dbReady } from "../../lib/db";
 import { dayKey, dayLabel, ultimosDiasUteis } from "../../lib/week";
 import { NOME_CLOSER, SEG_CLOSER, SEGMENTOS, EQUIPES_DE, closersDe, fotoDe } from "../../lib/config";
-import { ehGestor, segmentosDe, podeGerirCloser , podeVerTramitacoes } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,9 @@ export default async function Evolucao({ searchParams }) {
   const seg = SEGMENTOS.includes(searchParams?.seg) && meusSegs.includes(searchParams.seg)
     ? searchParams.seg
     : meusSegs[0] || "B2B";
-  const equipe = searchParams?.equipe || "";
+  const eqLider = equipeLiderada(session.user);
+  const equipeTravada = eqLider && eqLider.seg === seg ? eqLider.equipe : "";
+  const equipe = equipeTravada || searchParams?.equipe || "";
 
   const dias = ultimosDiasUteis(10);
   const linhas = (await getEvolucao(dias)).filter(
@@ -113,7 +115,7 @@ export default async function Evolucao({ searchParams }) {
             <Link key={s} href={`/evolucao?seg=${s}`} className={seg === s ? "on" : ""}>{s}</Link>
           ))}
         </div>
-        {EQUIPES_DE(seg).length > 0 && (
+        {!equipeTravada && EQUIPES_DE(seg).length > 0 && (
           <div className="seg-toggle">
             <Link href={qs({ equipe: "" })} className={equipe ? "" : "on"}>Todas</Link>
             {EQUIPES_DE(seg).map((e) => (

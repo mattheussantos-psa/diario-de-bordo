@@ -4,8 +4,8 @@ import { auth, signOut } from "../../auth";
 import { getTicketsCS, getOwnerByEmail, getOwnerNames } from "../../lib/hubspot";
 import { getTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
-import { NOME_CLOSER } from "../../lib/config";
-import { ehGestor, podeVerTramitacoes } from "../../lib/permissoes";
+import { NOME_CLOSER, closersDe } from "../../lib/config";
+import { ehGestor, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
 import { PIPELINE_CS, pendenciasDoTicket, TIPOS } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
@@ -42,8 +42,14 @@ export default async function Tramitacoes({ searchParams }) {
     erro = e;
   }
 
-  // Quem não é gestor vê só o que é dele.
-  if (!gestor) tickets = tickets.filter((t) => String(t.ownerId) === meuOwnerId);
+  // Quem não é gestor vê só o que é dele; quem lidera uma equipe vê a equipe.
+  const eqLider = equipeLiderada(session.user);
+  if (!gestor) {
+    tickets = tickets.filter((t) => String(t.ownerId) === meuOwnerId);
+  } else if (eqLider) {
+    const daEquipe = new Set(closersDe(eqLider.seg, eqLider.equipe).map((c) => c.id));
+    tickets = tickets.filter((t) => daEquipe.has(String(t.ownerId)));
+  }
 
   const registros = await getTramitacoes(tickets.map((t) => t.id));
 
@@ -72,6 +78,7 @@ export default async function Tramitacoes({ searchParams }) {
             <div className="title">Tramitações</div>
             <div className="subtitle">
               Pendências de CS · {dayLabel(hoje)}
+              {eqLider ? " · equipe " + eqLider.equipe : ""}
             </div>
           </div>
         </div>
@@ -133,7 +140,9 @@ export default async function Tramitacoes({ searchParams }) {
           <div className="kpi">
             <div className="lab">Tickets no funil</div>
             <div className="val">{tickets.length}</div>
-            <div className="sub">{gestor ? "CS inteiro" : "seus tickets"}</div>
+            <div className="sub">
+              {eqLider ? "equipe " + eqLider.equipe : gestor ? "CS inteiro" : "seus tickets"}
+            </div>
           </div>
         </div>
       )}

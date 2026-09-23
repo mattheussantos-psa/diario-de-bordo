@@ -5,7 +5,7 @@ import { getDealsByIds } from "../../lib/hubspot";
 import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe, EQUIPES_DE, closersDe, semEquipe } from "../../lib/config";
-import { ehGestor, segmentosDe, podeGerirCloser , podeVerTramitacoes } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, podeVerTramitacoes, equipeLiderada } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +41,9 @@ export default async function AgendaGeral({ searchParams }) {
   // enviou por último. Dentro do mesmo grupo, mantém a ordem do cadastro.
   const PESO = { enviado: 0, reprovado: 1, aprovado: 2, rascunho: 3 };
   // A grade segue a equipe escolhida; sem equipe, o time inteiro.
-  const equipe = searchParams?.equipe || "";
+  const eqLider = equipeLiderada(session.user);
+  const equipeTravada = eqLider && eqLider.seg === seg ? eqLider.equipe : "";
+  const equipe = equipeTravada || searchParams?.equipe || "";
   const time = closersDe(seg, equipe)
     .map((c, i) => {
       const briefing = porOwner[c.id] || null;
@@ -112,7 +114,7 @@ export default async function AgendaGeral({ searchParams }) {
             <Link key={s} href={`/agenda?seg=${s}`} className={seg === s ? "on" : ""}>{s}</Link>
           ))}
         </div>
-        {EQUIPES_DE(seg).length > 0 && (
+        {!equipeTravada && EQUIPES_DE(seg).length > 0 && (
           <div className="seg-toggle">
             <Link href={`/agenda?seg=${seg}`} className={equipe ? "" : "on"}>Todas</Link>
             {EQUIPES_DE(seg).map((e) => (

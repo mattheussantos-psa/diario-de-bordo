@@ -16,7 +16,7 @@ import { getBriefing, getDayBriefings, getFechamento, dbReady } from "../lib/db"
 import { getDealsByIds } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
-import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes } from "../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada } from "../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +79,11 @@ export default async function Page({ searchParams }) {
   const segPedido = SEGMENTOS.includes(searchParams?.seg) ? searchParams.seg : "B2B";
   let seg = !gestor || meusSegs.includes(segPedido) ? segPedido : meusSegs[0] || "B2B";
 
+  // Líder de equipe não escolhe: o recorte dele é sempre a própria equipe.
+  const eqLider = equipeLiderada(session.user);
+  const equipeTravada = eqLider && eqLider.seg === seg ? eqLider.equipe : "";
+  const equipeAtiva = equipeTravada || searchParams?.equipe || "";
+
   let viewOwner = null;
   let owners = [];
   let deals = [];
@@ -96,8 +101,8 @@ export default async function Page({ searchParams }) {
 
   if (gestor) {
     // Lista fixa dos closers do segmento (evita varrer os owners do HubSpot).
-    // A lista do seletor respeita a equipe escolhida.
-    owners = closersDe(seg, searchParams?.equipe).map((c) => ({ ownerId: c.id, name: c.nome }));
+    // Quem lidera uma equipe fica preso a ela; os demais escolhem no filtro.
+    owners = closersDe(seg, equipeAtiva).map((c) => ({ ownerId: c.id, name: c.nome }));
     // Líder é closer também: sem seleção, abre no próprio funil.
     const proprio = !isAdmin ? await getOwnerByEmail(email).catch(() => null) : null;
     meuOwnerId = proprio?.ownerId || null;
@@ -155,7 +160,7 @@ export default async function Page({ searchParams }) {
   const qs = (view) => {
     const q = new URLSearchParams();
     if (searchParams?.closer) q.set("closer", searchParams.closer);
-    if (searchParams?.equipe) q.set("equipe", searchParams.equipe);
+    if (equipeAtiva) q.set("equipe", equipeAtiva);
     q.set("seg", seg);
     if (view) q.set("view", view);
     return "/?" + q.toString();
@@ -245,9 +250,9 @@ export default async function Page({ searchParams }) {
             seg={seg}
             segs={meusSegs}
             papel={isAdmin ? "Admin" : "Líder " + seg}
-            equipes={EQUIPES_DE(seg)}
-            equipe={searchParams?.equipe || ""}
-            semEquipe={semEquipe(seg)}
+            equipes={equipeTravada ? [] : EQUIPES_DE(seg)}
+            equipe={equipeAtiva}
+            semEquipe={equipeTravada ? 0 : semEquipe(seg)}
           />
         </>
       ) : (
