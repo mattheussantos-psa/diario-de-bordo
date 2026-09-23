@@ -553,3 +553,27 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .fech-falta { color: var(--laranja); font-size: 12px; font-weight: 600; margin-right: auto; }
 .fech-ok { color: #17803d; font-size: 12px; font-weight: 600; margin-right: auto; }
 .fech-opcional { color: var(--muted); font-size: 12px; margin-right: auto; }
+
+/* -------------------------------------------------------------- evolução */
+.evo-bloco { padding: 18px 20px; margin-bottom: 16px; }
+.evo-cab { display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  flex-wrap: wrap; margin-bottom: 14px; font-size: 14px; }
+.evo-legenda { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 12px; }
+.evo-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.evo-chip { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.evo-chip.ef, .evo-parte.ef { background: #17803d; }
+.evo-chip.te, .evo-parte.te { background: var(--laranja); }
+.evo-chip.na, .evo-parte.na { background: #c98a4b; }
+.evo-chip.sr, .evo-parte.sr { background: #dfe3ea; }
+.evo-dias { display: flex; flex-direction: column; gap: 9px; }
+.evo-dia { display: grid; grid-template-columns: 92px 1fr 52px; align-items: center; gap: 12px; }
+.evo-dia-lab { color: var(--muted); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.evo-barra { display: flex; height: 22px; border-radius: 7px; overflow: hidden; background: var(--surface); }
+.evo-parte { height: 100%; }
+.evo-vazia { width: 100%; background: repeating-linear-gradient(45deg, var(--surface), var(--surface) 6px, #eef0f3 6px, #eef0f3 12px); }
+.evo-dia-num { text-align: right; font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+.evo-quem { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; }
+.evo-alerta { color: var(--laranja); font-weight: 600; }
+.evo-nota { color: var(--muted); font-size: 12.5px; line-height: 1.65; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.evo-nota b { color: var(--ink); }

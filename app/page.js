@@ -232,6 +232,7 @@ export default async function Page({ searchParams }) {
                 Aprovações{pendentes > 0 ? ` (${pendentes})` : ""}
               </Link>
               <Link href="/agenda">Agenda geral</Link>
+              <Link href="/evolucao">Evolução</Link>
             </div>
           </div>
           <AdminBar
