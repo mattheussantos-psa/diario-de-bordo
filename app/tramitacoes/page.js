@@ -70,7 +70,12 @@ export default async function Tramitacoes({ searchParams }) {
 
   const abertas = doFarmer.filter((p) => p.status !== "aguardando");
   const aguardando = doFarmer.filter((p) => p.status === "aguardando");
-  const lista = filtro === "aguardando" ? aguardando : filtro === "todas" ? doFarmer : abertas;
+  const bruta = filtro === "aguardando" ? aguardando : filtro === "todas" ? doFarmer : abertas;
+
+  // Evento já realizado vai para o fim, em bloco próprio: o ticket segue
+  // aberto, mas a ação perdeu a hora e não pode disputar espaço com o resto.
+  const lista = bruta.filter((p) => !p.eventoPassado);
+  const vencidas = bruta.filter((p) => p.eventoPassado);
 
   // Farmers que o usuário alcança, com a contagem ao lado do nome.
   const equipeDoFiltro = eqLider ? eqLider.equipe : "";
@@ -199,7 +204,7 @@ export default async function Tramitacoes({ searchParams }) {
         </div>
       )}
 
-      {!erro && lista.length === 0 ? (
+      {!erro && lista.length === 0 && vencidas.length === 0 ? (
         <div className="card">
           <div className="cal-empty">
             {filtro === "abertas"
@@ -220,6 +225,24 @@ export default async function Tramitacoes({ searchParams }) {
             />
           ))}
         </div>
+      )}
+
+      {vencidas.length > 0 && (
+        <details className="tram-passados">
+          <summary>
+            {vencidas.length} de evento já realizado — o ticket segue aberto, mas a data passou
+          </summary>
+          <div className="tram-grid">
+            {vencidas.map((p) => (
+              <TramitacaoCard
+                key={p.ticketId + p.tipo}
+                p={p}
+                ticket={ticketsById[p.ticketId]}
+                ehGestor={gestor}
+              />
+            ))}
+          </div>
+        </details>
       )}
 
       <div className="evo-nota">

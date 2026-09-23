@@ -604,3 +604,7 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .tram-farmers { flex-wrap: wrap; max-width: 100%; }
 .tram-farmers a b { color: var(--azul); margin-left: 3px; }
 .tram-farmers a.on b { color: inherit; }
+.tram-passados { margin-top: 18px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); padding: 12px 16px; }
+.tram-passados summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 600; }
+.tram-passados[open] summary { margin-bottom: 14px; }
