@@ -724,6 +724,9 @@ a.btn-primary.desativado { opacity: .45; pointer-events: none; }
 .ctx-limpar:hover { color: var(--ink); }
 
 /* ------------------------------------------- lista do dia em tabela (CS) */
+summary.planbar { cursor: pointer; list-style: none; }
+/* Negócio perdido aparece apagado: está na lista só para não sumir calado. */
+.linha-perdida { opacity: .55; }
 .linha-pronta { background: #f4fbf6; }
 .linha-pronta td:first-child { box-shadow: inset 4px 0 0 #17803d; }
 .col-data { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13px; }
