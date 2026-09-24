@@ -13,7 +13,7 @@ const STATUS_LABEL = {
   reprovado: "Reprovado",
 };
 
-export default function DealsTable({ deals, options, closerName, emptyLabel, briefing, ctx, seg = "B2B", totalFunil = 0, aviso = "" }) {
+export default function DealsTable({ deals, options, closerName, emptyLabel, briefing, ctx, seg = "B2B", totalFunil = 0, aviso = "", listaFixa = false }) {
   const estrategias = ESTRATEGIAS[seg] || [];
   const [rows, setRows] = useState(() => deals.map((d) => ({ ...d, _obs: d.observacoes })));
   const [saving, setSaving] = useState(false);
@@ -21,7 +21,16 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
   const [page, setPage] = useState(0);
 
   // Briefing do dia: { [dealId]: { de, para } }. Ausente = fora do briefing.
-  const [items, setItems] = useState(() => ({ ...(briefing?.items || {}) }));
+  // Com a lista fixa não há o que marcar: os negócios escalados pelos critérios
+  // já SÃO o briefing, e o closer só preenche estratégia, evolução e observação.
+  const [items, setItems] = useState(() => {
+    const base = { ...(briefing?.items || {}) };
+    if (listaFixa) {
+      // "de" congela a temperatura de hoje; "para" o closer escolhe.
+      for (const d of deals) base[d.id] ||= { de: d.temperatura || "", para: "", estrategia: "" };
+    }
+    return base;
+  });
   const [status, setStatus] = useState(briefing?.status || "rascunho");
   const [briefMsg, setBriefMsg] = useState(null);
   const [briefBusy, setBriefBusy] = useState(false);
@@ -177,7 +186,9 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
             <span className="plan-week">{ctx.diaLabel}</span>
             <span className="plan-count"><b>{total}</b> negócio{total === 1 ? "" : "s"} para hoje</span>
             {total === 0 && (
-              <span className="plan-motivo">marque ao menos um negócio</span>
+              <span className="plan-motivo">
+                {listaFixa ? "sem negócios na lista de hoje" : "marque ao menos um negócio"}
+              </span>
             )}
             {incompletos.length > 0 && (
               <span className="plan-motivo">
@@ -196,9 +207,11 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
               disabled={briefBusy || total === 0 || incompletos.length > 0}
               title={
                 total === 0
-                  ? "Marque ao menos um negócio para atuar hoje"
+                  ? listaFixa
+                    ? "Nenhum negócio foi escalado para hoje"
+                    : "Marque ao menos um negócio para atuar hoje"
                   : incompletos.length > 0
-                  ? "Defina estratégia e evolução em todos os negócios marcados"
+                  ? "Defina estratégia e evolução em todos os negócios da lista"
                   : undefined
               }
             >
@@ -264,7 +277,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
         <table>
           <thead>
             <tr>
-              {podeEditar && <th className="col-atuar">Atuar hoje</th>}
+              {podeEditar && !listaFixa && <th className="col-atuar">Atuar hoje</th>}
               <th style={{ width: "18%" }}>Nome do negócio</th>
               <th style={{ width: "11%" }}>Etapa atual</th>
               <th style={{ width: "13%" }}>Próxima atividade</th>
@@ -279,7 +292,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
               const dentro = !!item;
               return (
                 <tr key={r.id} className={dentro ? "in-plan" + (falta(r.id) ? " incompleto" : "") : ""}>
-                  {podeEditar && (
+                  {podeEditar && !listaFixa && (
                     <td>
                       <label className="plan-check">
                         <input type="checkbox" checked={dentro} onChange={() => toggle(r)} />
@@ -288,7 +301,8 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                     </td>
                   )}
                   <td className="deal">
-                    {dentro && <span className="plan-flag">Hoje</span>}
+                    {/* Com a lista fixa, todos são de hoje: a flag viraria ruído. */}
+                    {dentro && !listaFixa && <span className="plan-flag">Hoje</span>}
                     {/* Por que este negócio está na lista de hoje. */}
                     {r.grupo && GRUPOS[r.grupo] && (
                       <span className={"emp-tag grupo g-" + r.grupo} title={GRUPOS[r.grupo].motivo}>

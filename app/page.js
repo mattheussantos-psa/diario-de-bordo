@@ -303,10 +303,14 @@ export default async function Page({ searchParams }) {
   // porque os critérios são do B2B.
   let doDia = rows;
   let avisoFunil = "";
+  // Com a lista montada pelos critérios, ela É o briefing: o closer não escolhe
+  // mais o que atuar, só preenche. Sem ela, a tela volta ao modo de seleção.
+  let listaPorCriterios = false;
   if (seg === "B2B" && viewOwner && rows.length > 0) {
     try {
       const { itens } = await listaDoDiaCloser(String(viewOwner.ownerId), rows, dia);
       doDia = itens;
+      listaPorCriterios = true;
     } catch (e) {
       // Cair para o funil inteiro é melhor que tela vazia, mas o closer precisa
       // saber que está vendo outra coisa — senão some sem ninguém perceber.
@@ -516,6 +520,7 @@ export default async function Page({ searchParams }) {
         deals={doDia}
         totalFunil={rows.length}
         aviso={avisoFunil}
+        listaFixa={listaPorCriterios}
         options={tempOptions}
         closerName={viewOwner ? viewOwner.name : ""}
         emptyLabel={isAdmin && !viewOwner ? "Selecione um closer acima para ver o diário." : "Nenhum negócio ativo no funil."}
