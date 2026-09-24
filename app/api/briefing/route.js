@@ -1,6 +1,6 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail, getDealsByIds, updateDeal, propriedadeDeal, criarTarefaNoDeal } from "../../../lib/hubspot";
-import { valorDaEstrategia, estrategiaPorId } from "../../../lib/estrategias";
+import { valorDaEstrategia } from "../../../lib/estrategias";
 import { saveBriefing, reviewBriefing, getBriefing, dbReady, dealsComTarefa, registraTarefa } from "../../../lib/db";
 import { dayKey, prazoDoDia } from "../../../lib/week";
 import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
@@ -157,6 +157,13 @@ export async function PATCH(req) {
   const jaTemTarefa = await dealsComTarefa(String(ownerId), dia);
   const vence = prazoDoDia(dia);
 
+  // O corpo da tarefa é a observação que o closer escreveu no diário, que mora
+  // no próprio negócio. Falhar aqui não cancela a tarefa: ela nasce sem corpo.
+  const dadosDosDeals = await getDealsByIds(alvos.map(([id]) => id)).catch((e) => {
+    console.error("[briefing] não consegui ler as observações dos negócios:", e?.message);
+    return {};
+  });
+
   // Um de cada vez: rajada de escrita é o que derrubou os salvamentos antes.
   let aplicados = 0;
   let tarefas = 0;
@@ -180,8 +187,7 @@ export async function PATCH(req) {
     if (jaTemTarefa.has(String(dealId))) continue;
     try {
       const taskId = await criarTarefaNoDeal(dealId, {
-        assunto: estrategiaPorId[v.estrategia]?.titulo || "Atuar no negócio hoje",
-        corpo: v.de && v.para ? `Evolução pretendida: ${v.de} → ${v.para}` : "",
+        corpo: dadosDosDeals[String(dealId)]?.observacoes || "",
         ownerId,
         vence,
       });
