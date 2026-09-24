@@ -305,7 +305,10 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                     {dentro && !listaFixa && <span className="plan-flag">Hoje</span>}
                     {/* Por que este negócio está na lista de hoje. */}
                     {r.grupo && GRUPOS[r.grupo] && (
-                      <span className={"emp-tag grupo g-" + r.grupo} title={GRUPOS[r.grupo].motivo}>
+                      <span
+                        className={"emp-tag grupo g-" + r.grupo}
+                        title={r.porque || GRUPOS[r.grupo].motivo}
+                      >
                         {GRUPOS[r.grupo].label}
                       </span>
                     )}
@@ -313,6 +316,8 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                       {r.name}
                     </a>
                     <small>{r.amountText}</small>
+                    {/* Entrou só para fechar as dez: diz o que faltou em cada critério. */}
+                    {r.porque && <small className="deal-porque">{r.porque}</small>}
                   </td>
                   <td>
                     <span className="stage">

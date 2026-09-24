@@ -688,12 +688,14 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 
 /* Por que o negócio entrou na lista do dia. Mais quente = mais urgente. */
 .emp-tag.grupo { margin-right: 6px; }
+.deal-porque { display: block; color: var(--muted); font-size: 11px; line-height: 1.4; margin-top: 2px; }
 .g-proposta_hoje { background: #fde8e8; color: #b42318; }
 .g-fup { background: var(--laranja-soft); color: var(--laranja); }
 .g-evento_30d { background: #fff4d6; color: #a06800; }
 .g-sem_atividade { background: var(--ink-soft); color: var(--ink); }
 .g-compra_18m { background: #eaf7ee; color: #17803d; }
 .g-budget_alto { background: var(--azul-soft); color: var(--azul); }
+.g-sem_criterio { background: var(--surface-2); color: var(--muted); }
 a.btn-primary { text-decoration: none; display: inline-block; }
 a.btn-primary.desativado { opacity: .45; pointer-events: none; }
 
