@@ -544,6 +544,11 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .fech-plano { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   background: var(--surface-2); border-radius: 10px; padding: 9px 11px; }
 .fech-evo { display: inline-flex; align-items: center; gap: 7px; }
+/* A tarefa do dia. Concluída fica verde: é o registro que fecha o negócio. */
+.fech-tarefa { border-left: 3px solid var(--line); padding: 2px 0 2px 10px; }
+.fech-tarefa.feita { border-left-color: #17803d; }
+.fech-tarefa.feita .fech-crm-lab { color: #17803d; }
+
 /* Evidência vinda do CRM: informa o resultado, não o substitui. */
 .fech-crm { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
   border-left: 3px solid var(--azul); padding: 2px 0 2px 10px; }

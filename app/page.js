@@ -14,8 +14,8 @@ import Fechamento from "./Fechamento";
 import ListaDoDia from "./ListaDoDia";
 import FecharDia from "./FecharDia";
 import Link from "next/link";
-import { getBriefing, getDayBriefings, getFechamento, dbReady } from "../lib/db";
-import { getDealsByIds } from "../lib/hubspot";
+import { getBriefing, getDayBriefings, getFechamento, dbReady, tarefasDoDia, aplicarRetornoDeTarefa, MIN_OBS } from "../lib/db";
+import { getDealsByIds, retornoDasTarefas } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao } from "../lib/permissoes";
@@ -217,9 +217,6 @@ export default async function Page({ searchParams }) {
 
   const dia = dayKey();
   const briefing = viewOwner ? await getBriefing(viewOwner.ownerId, dia) : null;
-  // O fechamento só faz sentido depois de existir briefing.
-  const fechamento = viewOwner && isFechar ? await getFechamento(viewOwner.ownerId, dia) : {};
-
   // O que o CRM já registrou hoje, negócio a negócio — o closer atua em negócio,
   // não em empresa. Vira sugestão no fechamento, nunca resultado gravado: aqui a
   // observação é obrigatória e só quem falou com o cliente sabe escrevê-la.
@@ -233,6 +230,35 @@ export default async function Page({ searchParams }) {
           }))[String(viewOwner.ownerId)] || {}
         )
       : {};
+
+  // O time não registra ligação: a tarefa é o registro. Concluí-la no HubSpot
+  // com um texto fecha o negócio no diário, sem ninguém digitar de novo aqui.
+  let tarefaPorDeal = {};
+  if (viewOwner && isFechar && !ehFarmer) {
+    try {
+      const porDeal = await tarefasDoDia(String(viewOwner.ownerId), dia);
+      const retorno = await retornoDasTarefas(Object.values(porDeal));
+      const aGravar = {};
+      for (const [dealId, taskId] of Object.entries(porDeal)) {
+        const t = retorno[String(taskId)];
+        if (!t) continue;
+        tarefaPorDeal[dealId] = t;
+        // Só o que veio concluído vira registro, e só com texto suficiente para
+        // valer como observação. O resto fica como sugestão na tela.
+        if (t.concluida && t.texto.length >= MIN_OBS) {
+          aGravar[dealId] = { resultado: "efetivo", observacao: t.texto };
+        }
+      }
+      // Nunca sobrescreve o que o closer já registrou — ON CONFLICT DO NOTHING.
+      await aplicarRetornoDeTarefa(String(viewOwner.ownerId), dia, aGravar);
+    } catch (e) {
+      console.error("[fechamento] não consegui ler o retorno das tarefas:", e?.message);
+    }
+  }
+
+  // Lido depois de aplicar o retorno das tarefas: senão a tela mostraria o
+  // fechamento de antes e o que veio do HubSpot só apareceria no recarregar.
+  const fechamento = viewOwner && isFechar ? await getFechamento(viewOwner.ownerId, dia) : {};
 
   // Briefing do último dia útil, para o closer retomar de onde parou.
   const diaAnterior = diaUtilAnterior(dia);
@@ -467,6 +493,7 @@ export default async function Page({ searchParams }) {
           briefing={briefing}
           fechamento={fechamento}
           atividade={atividadeCrm}
+          tarefas={tarefaPorDeal}
           ctx={{
             ownerId: viewOwner ? String(viewOwner.ownerId) : "",
             dia,

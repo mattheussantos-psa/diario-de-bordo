@@ -31,11 +31,13 @@ const temAtividade = (a) => !!a && (a.ligacoes > 0 || a.reunioes > 0 || a.outras
 
 // Um card por negócio do briefing. Salva um de cada vez: o closer fecha
 // conforme termina cada contato, não tudo no fim do dia.
-function Card({ r, item, inicial, crm, ctx, onSalvo }) {
-  // Sugere o que o CRM já sabe, mas não dá por registrado: a observação é
-  // obrigatória e só quem falou com o cliente sabe escrever.
-  const [resultado, setResultado] = useState(inicial?.resultado || crm?.sugerido || "");
-  const [obs, setObs] = useState(inicial?.observacao || "");
+function Card({ r, item, inicial, crm, tarefa, ctx, onSalvo }) {
+  // A tarefa concluída no HubSpot é o registro do time, que não anota ligação.
+  // Vindo dela, já entra preenchido; da atividade solta, entra como sugestão.
+  const [resultado, setResultado] = useState(
+    inicial?.resultado || (tarefa?.concluida ? "efetivo" : "") || crm?.sugerido || ""
+  );
+  const [obs, setObs] = useState(inicial?.observacao || tarefa?.texto || "");
   const [salvo, setSalvo] = useState(!!inicial?.resultado);
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
@@ -94,6 +96,24 @@ function Card({ r, item, inicial, crm, ctx, onSalvo }) {
         </span>
       </div>
 
+      {/* A tarefa do dia: é nela que o time registra o que aconteceu. */}
+      {tarefa && (
+        <div className={"fech-tarefa" + (tarefa.concluida ? " feita" : "")}>
+          <span className="fech-crm-lab">
+            {tarefa.concluida ? "tarefa concluída" : "tarefa ainda aberta"}
+          </span>
+          {tarefa.texto ? (
+            <p className="fech-crm-texto">{tarefa.texto}</p>
+          ) : (
+            <span className="fech-opcional">
+              {tarefa.concluida
+                ? "concluída sem texto — escreva aqui o que aconteceu"
+                : "responda a tarefa no HubSpot e ela volta preenchida aqui"}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Evidência do CRM: o closer já registrou lá, não digita de novo aqui. */}
       {temAtividade(crm) && (
         <div className="fech-crm">
@@ -150,7 +170,7 @@ function Card({ r, item, inicial, crm, ctx, onSalvo }) {
   );
 }
 
-export default function Fechamento({ rows, briefing, fechamento, atividade, ctx }) {
+export default function Fechamento({ rows, briefing, fechamento, atividade, tarefas, ctx }) {
   const items = briefing?.items || {};
   const doDia = rows.filter((r) => r.id in items);
   const [feitos, setFeitos] = useState(() => {
@@ -198,6 +218,7 @@ export default function Fechamento({ rows, briefing, fechamento, atividade, ctx 
             item={items[r.id]}
             inicial={fechamento?.[r.id]}
             crm={atividade?.[r.id]}
+            tarefa={tarefas?.[r.id]}
             ctx={ctx}
             onSalvo={(id, resultado) => setFeitos((f) => ({ ...f, [id]: resultado }))}
           />
