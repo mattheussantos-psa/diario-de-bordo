@@ -219,6 +219,20 @@ export default async function Page({ searchParams }) {
   // O fechamento só faz sentido depois de existir briefing.
   const fechamento = viewOwner && isFechar ? await getFechamento(viewOwner.ownerId, dia) : {};
 
+  // O que o CRM já registrou hoje, negócio a negócio — o closer atua em negócio,
+  // não em empresa. Vira sugestão no fechamento, nunca resultado gravado: aqui a
+  // observação é obrigatória e só quem falou com o cliente sabe escrevê-la.
+  // Falha (escopo, cota) só faz o closer preencher à mão, como antes.
+  const atividadeCrm =
+    viewOwner && isFechar && !ehFarmer
+      ? (
+          (await atividadeDoDia([String(viewOwner.ownerId)], dia, "deals").catch((err) => {
+            console.error("[fechamento] atividade do dia falhou:", err?.message);
+            return {};
+          }))[String(viewOwner.ownerId)] || {}
+        )
+      : {};
+
   // Briefing do último dia útil, para o closer retomar de onde parou.
   const diaAnterior = diaUtilAnterior(dia);
   const anterior = viewOwner ? await getBriefing(viewOwner.ownerId, diaAnterior) : null;
@@ -434,6 +448,7 @@ export default async function Page({ searchParams }) {
           rows={rows}
           briefing={briefing}
           fechamento={fechamento}
+          atividade={atividadeCrm}
           ctx={{
             ownerId: viewOwner ? String(viewOwner.ownerId) : "",
             dia,

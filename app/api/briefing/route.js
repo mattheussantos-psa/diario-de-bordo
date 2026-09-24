@@ -1,8 +1,8 @@
 import { auth } from "../../../auth";
-import { getOwnerByEmail, getDealsByIds, updateDeal, propriedadeDeal } from "../../../lib/hubspot";
-import { valorDaEstrategia } from "../../../lib/estrategias";
-import { saveBriefing, reviewBriefing, getBriefing, dbReady } from "../../../lib/db";
-import { dayKey } from "../../../lib/week";
+import { getOwnerByEmail, getDealsByIds, updateDeal, propriedadeDeal, criarTarefaNoDeal } from "../../../lib/hubspot";
+import { valorDaEstrategia, estrategiaPorId } from "../../../lib/estrategias";
+import { saveBriefing, reviewBriefing, getBriefing, dbReady, dealsComTarefa, registraTarefa } from "../../../lib/db";
+import { dayKey, prazoDoDia } from "../../../lib/week";
 import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
 
 // Closer só mexe no próprio briefing; admin mexe no de qualquer closer.
@@ -152,9 +152,17 @@ export async function PATCH(req) {
   // é resolvido contra as opções reais dela — ver valorDaEstrategia.
   const propEstrategia = await propriedadeDeal("estrategia");
 
+  // Tarefa só para quem ainda não tem: reaprovar não pode encher o negócio de
+  // tarefas repetidas.
+  const jaTemTarefa = await dealsComTarefa(String(ownerId), dia);
+  const vence = prazoDoDia(dia);
+
   // Um de cada vez: rajada de escrita é o que derrubou os salvamentos antes.
   let aplicados = 0;
+  let tarefas = 0;
   const falhas = [];
+  const falhasTarefa = [];
+  let erroTarefa = "";
   for (const [dealId, v] of alvos) {
     try {
       const patch = { temperatura_atual: v.para };
@@ -166,7 +174,31 @@ export async function PATCH(req) {
       console.error(`[briefing] falha ao gravar o negócio ${dealId}:`, e);
       falhas.push(dealId);
     }
+
+    // A estratégia aprovada vira tarefa no negócio: o plano do dia passa a
+    // existir onde o closer trabalha, não só dentro do diário.
+    if (jaTemTarefa.has(String(dealId))) continue;
+    try {
+      const taskId = await criarTarefaNoDeal(dealId, {
+        assunto: estrategiaPorId[v.estrategia]?.titulo || "Atuar no negócio hoje",
+        corpo: v.de && v.para ? `Evolução pretendida: ${v.de} → ${v.para}` : "",
+        ownerId,
+        vence,
+      });
+      await registraTarefa(String(ownerId), dia, dealId, taskId);
+      tarefas++;
+    } catch (e) {
+      console.error(`[briefing] falha ao criar tarefa no negócio ${dealId}:`, e);
+      falhasTarefa.push(dealId);
+      erroTarefa ||= String(e?.message || e);
+    }
   }
 
-  return Response.json({ ok: true, aplicados, falhas });
+  // Falhar em silêncio aqui esconderia escopo faltando no App Privado: a
+  // aprovação continua valendo, mas quem aprovou fica sabendo.
+  const aviso = falhasTarefa.length
+    ? `Briefing aprovado, mas ${falhasTarefa.length} tarefa(s) não foram criadas no HubSpot. ${erroTarefa}`
+    : "";
+
+  return Response.json({ ok: true, aplicados, falhas, tarefas, falhasTarefa, aviso });
 }

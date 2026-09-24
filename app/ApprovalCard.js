@@ -116,14 +116,18 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
       if (novo === "aprovado") {
         const n = d.aplicados || 0;
         const falhas = d.falhas?.length || 0;
+        const tarefas = d.tarefas || 0;
         setMsg({
-          ok: falhas === 0,
+          ok: falhas === 0 && !d.aviso,
           text:
             "Aprovado ✓ · " +
             n +
             (n === 1 ? " negócio atualizado" : " negócios atualizados") +
             " no HubSpot" +
-            (falhas ? " · " + falhas + " não gravou, veja os logs" : ""),
+            (tarefas ? " · " + tarefas + (tarefas === 1 ? " tarefa criada" : " tarefas criadas") : "") +
+            (falhas ? " · " + falhas + " não gravou, veja os logs" : "") +
+            // Escopo faltando no App Privado aparece aqui, não só no log.
+            (d.aviso ? " · " + d.aviso : ""),
         });
       } else {
         setMsg({ ok: true, text: "Reprovado ✓" });

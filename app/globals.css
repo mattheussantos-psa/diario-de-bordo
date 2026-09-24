@@ -544,6 +544,13 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .fech-plano { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   background: var(--surface-2); border-radius: 10px; padding: 9px 11px; }
 .fech-evo { display: inline-flex; align-items: center; gap: 7px; }
+/* Evidência vinda do CRM: informa o resultado, não o substitui. */
+.fech-crm { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+  border-left: 3px solid var(--azul); padding: 2px 0 2px 10px; }
+.fech-crm-lab { font-size: 10.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--azul); }
+.fech-crm-nums { font-size: 12.5px; color: var(--ink); font-weight: 600; }
+.fech-crm-texto { flex-basis: 100%; margin: 2px 0 0; font-size: 12.5px; color: var(--muted);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .fech-opcoes { display: flex; gap: 8px; flex-wrap: wrap; }
 .fech-op { border: 1px solid var(--line); background: var(--surface); color: var(--muted);
   font: inherit; font-size: 12.5px; font-weight: 600; padding: 8px 13px; border-radius: 999px;

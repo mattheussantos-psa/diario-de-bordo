@@ -15,10 +15,26 @@ const OPCOES = [
 const MIN_OBS = 50;
 const opcaoDe = (id) => OPCOES.find((o) => o.id === id);
 
+const plural = (n, um, muitos) => `${n} ${n > 1 ? muitos : um}`;
+
+// O que o CRM registrou hoje neste negócio, em uma linha.
+function resumoCrm(a) {
+  const p = [];
+  if (a.ligacoes) p.push(plural(a.ligacoes, "ligação", "ligações"));
+  if (a.conectadas) p.push(plural(a.conectadas, "conectada", "conectadas"));
+  if (a.reunioes) p.push(plural(a.reunioes, "reunião realizada", "reuniões realizadas"));
+  if (a.outras) p.push(plural(a.outras, "outra atividade", "outras atividades"));
+  return p.join(" · ");
+}
+
+const temAtividade = (a) => !!a && (a.ligacoes > 0 || a.reunioes > 0 || a.outras > 0);
+
 // Um card por negócio do briefing. Salva um de cada vez: o closer fecha
 // conforme termina cada contato, não tudo no fim do dia.
-function Card({ r, item, inicial, ctx, onSalvo }) {
-  const [resultado, setResultado] = useState(inicial?.resultado || "");
+function Card({ r, item, inicial, crm, ctx, onSalvo }) {
+  // Sugere o que o CRM já sabe, mas não dá por registrado: a observação é
+  // obrigatória e só quem falou com o cliente sabe escrever.
+  const [resultado, setResultado] = useState(inicial?.resultado || crm?.sugerido || "");
   const [obs, setObs] = useState(inicial?.observacao || "");
   const [salvo, setSalvo] = useState(!!inicial?.resultado);
   const [busy, setBusy] = useState(false);
@@ -78,6 +94,15 @@ function Card({ r, item, inicial, ctx, onSalvo }) {
         </span>
       </div>
 
+      {/* Evidência do CRM: o closer já registrou lá, não digita de novo aqui. */}
+      {temAtividade(crm) && (
+        <div className="fech-crm">
+          <span className="fech-crm-lab">no CRM hoje</span>
+          <span className="fech-crm-nums">{resumoCrm(crm)}</span>
+          {crm.texto && <p className="fech-crm-texto">{crm.texto}</p>}
+        </div>
+      )}
+
       <div className="fech-opcoes">
         {OPCOES.map((o) => (
           <button
@@ -125,7 +150,7 @@ function Card({ r, item, inicial, ctx, onSalvo }) {
   );
 }
 
-export default function Fechamento({ rows, briefing, fechamento, ctx }) {
+export default function Fechamento({ rows, briefing, fechamento, atividade, ctx }) {
   const items = briefing?.items || {};
   const doDia = rows.filter((r) => r.id in items);
   const [feitos, setFeitos] = useState(() => {
@@ -172,6 +197,7 @@ export default function Fechamento({ rows, briefing, fechamento, ctx }) {
             r={r}
             item={items[r.id]}
             inicial={fechamento?.[r.id]}
+            crm={atividade?.[r.id]}
             ctx={ctx}
             onSalvo={(id, resultado) => setFeitos((f) => ({ ...f, [id]: resultado }))}
           />
