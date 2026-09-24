@@ -2,6 +2,7 @@ import { auth } from "../../../auth";
 import { getDayBriefings, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
 import { NOME_CLOSER, SEG_CLOSER } from "../../../lib/config";
+import { diagnosticoTarefas } from "../../../lib/hubspot";
 
 // Diagnóstico: o que está gravado para o dia, exatamente como o banco devolve.
 // ponytail: rota de apoio; remover quando o fluxo estiver estável.
@@ -11,7 +12,13 @@ export async function GET(req) {
     return Response.json({ error: "Apenas admin." }, { status: 403 });
   }
 
-  const dia = new URL(req.url).searchParams.get("dia") || dayKey();
+  const { searchParams } = new URL(req.url);
+
+  // ?deal=<id> responde só sobre a criação de tarefa naquele negócio.
+  const deal = searchParams.get("deal");
+  if (deal) return Response.json(await diagnosticoTarefas(deal));
+
+  const dia = searchParams.get("dia") || dayKey();
   const briefings = await getDayBriefings(dia);
 
   return Response.json({
