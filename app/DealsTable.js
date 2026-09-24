@@ -195,8 +195,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                 {incompletos.length} sem estratégia ou evolução
               </span>
             )}
-            {status === "reprovado" && briefing?.motivo && (
-              <span className="plan-motivo">Motivo: {briefing.motivo}</span>
+            {/* O que o gestor escreveu ao decidir — vale aprovado e reprovado. */}
+            {briefing?.motivo && (status === "reprovado" || status === "aprovado") && (
+              <span className={status === "reprovado" ? "plan-motivo" : "plan-obs-gestor"}>
+                {status === "reprovado" ? "Motivo" : "Observação"}
+                {briefing.revisadoPor ? ` de ${briefing.revisadoPor}` : ""}: {briefing.motivo}
+              </span>
             )}
           </div>
           <div className="planbar-actions">

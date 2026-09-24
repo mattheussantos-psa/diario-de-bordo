@@ -20,7 +20,6 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
   const router = useRouter();
   const [status, setStatus] = useState(plano.status);
   const [motivo, setMotivo] = useState(plano.motivo || "");
-  const [abrirReprova, setAbrirReprova] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
 
@@ -94,7 +93,7 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
 
   async function decidir(novo) {
     if (novo === "reprovado" && !motivo.trim()) {
-      setMsg({ ok: false, text: "Escreva o motivo." });
+      setMsg({ ok: false, text: "Escreva a observação antes de reprovar." });
       return;
     }
     setBusy(true);
@@ -111,7 +110,6 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
       }
       const d = await res.json().catch(() => ({}));
       setStatus(novo);
-      setAbrirReprova(false);
       // O gestor precisa saber o que foi de fato gravado no HubSpot.
       if (novo === "aprovado") {
         const n = d.aplicados || 0;
@@ -318,7 +316,9 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
         ) : (
           <>
             <button className="btn-ghost" onClick={abrirEdicao} disabled={busy}>Editar briefing</button>
-            <button className="btn-ghost" onClick={() => setAbrirReprova((v) => !v)} disabled={busy}>Reprovar</button>
+            <button className="btn-danger" onClick={() => decidir("reprovado")} disabled={busy}>
+              Reprovar
+            </button>
             <button className="btn-primary" onClick={() => decidir("aprovado")} disabled={busy || status === "aprovado"}>
               {busy ? "…" : status === "aprovado" ? "Aprovado" : "Aprovar"}
             </button>
@@ -326,17 +326,16 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
         )}
       </div>
 
-      {abrirReprova && !editando && (
+      {/* Uma observação só, para os dois caminhos: o closer lê o que o gestor
+          escreveu tanto ao aprovar quanto ao reprovar. */}
+      {!editando && (
         <div className="reprova">
           <input
             className="reprova-input"
-            placeholder="Motivo da reprovação…"
+            placeholder="Observação para o closer — obrigatória ao reprovar"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />
-          <button className="btn-danger" onClick={() => decidir("reprovado")} disabled={busy}>
-            Confirmar reprovação
-          </button>
         </div>
       )}
     </div>
