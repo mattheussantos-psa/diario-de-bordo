@@ -22,6 +22,7 @@ import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTrami
 import { listaDoDia } from "../lib/dia-farmer";
 import { resumoDoMes } from "../lib/metricas-farmer";
 import { atividadeDoDia } from "../lib/atividade";
+import { listaDoDiaCloser } from "../lib/dia-closer";
 import { empresasComSelo } from "../lib/relacionamento";
 import { montaHistorico, precisaAuxilio, placarDoDia } from "../lib/carteira";
 import { getHistoricoCarteira, aplicarAtividade, getListaDia } from "../lib/db";
@@ -271,6 +272,23 @@ export default async function Page({ searchParams }) {
     url: dealUrl(d.id),
   }));
 
+  // A lista do dia do closer no B2B: dos negócios abertos, os 10 que os
+  // critérios escalaram. Fora do B2B a tela segue mostrando o funil inteiro,
+  // porque os critérios são do B2B.
+  let doDia = rows;
+  let avisoFunil = "";
+  if (seg === "B2B" && viewOwner && rows.length > 0) {
+    try {
+      const { itens } = await listaDoDiaCloser(String(viewOwner.ownerId), rows, dia);
+      doDia = itens;
+    } catch (e) {
+      // Cair para o funil inteiro é melhor que tela vazia, mas o closer precisa
+      // saber que está vendo outra coisa — senão some sem ninguém perceber.
+      console.error("[funil] não consegui montar a lista do dia:", e?.message);
+      avisoFunil = "Não consegui montar a lista do dia — mostrando o funil inteiro. " + e.message;
+    }
+  }
+
   // Negócios do dia anterior: aproveita o que já veio no funil de hoje e só
   // consulta o HubSpot pelos que saíram dele (ganho, perdido ou reatribuído).
   let ontem = null;
@@ -468,7 +486,9 @@ export default async function Page({ searchParams }) {
          fica presa na lista anterior. */
       <DealsTable
         key={`${searchParams?.closer || "me"}-${seg}`}
-        deals={rows}
+        deals={doDia}
+        totalFunil={rows.length}
+        aviso={avisoFunil}
         options={tempOptions}
         closerName={viewOwner ? viewOwner.name : ""}
         emptyLabel={isAdmin && !viewOwner ? "Selecione um closer acima para ver o diário." : "Nenhum negócio ativo no funil."}

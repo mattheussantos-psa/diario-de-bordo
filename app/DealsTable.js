@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { TEMP_STYLE } from "../lib/config";
 import { ESTRATEGIAS, numeroDa } from "../lib/estrategias";
+import { GRUPOS } from "../lib/funil";
 import BotaoWhats from "./BotaoWhats";
 
 const STATUS_LABEL = {
@@ -12,7 +13,7 @@ const STATUS_LABEL = {
   reprovado: "Reprovado",
 };
 
-export default function DealsTable({ deals, options, closerName, emptyLabel, briefing, ctx, seg = "B2B" }) {
+export default function DealsTable({ deals, options, closerName, emptyLabel, briefing, ctx, seg = "B2B", totalFunil = 0, aviso = "" }) {
   const estrategias = ESTRATEGIAS[seg] || [];
   const [rows, setRows] = useState(() => deals.map((d) => ({ ...d, _obs: d.observacoes })));
   const [saving, setSaving] = useState(false);
@@ -215,6 +216,23 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
         </div>
       )}
 
+      {/* De onde saiu esta lista. Sem isto, o closer só vê o funil encolher. */}
+      {aviso ? (
+        <div className="busca-bar">
+          <span className="err">{aviso}</span>
+        </div>
+      ) : totalFunil > deals.length ? (
+        <div className="busca-bar">
+          <span className="plan-week">Lista de hoje</span>
+          <span className="plan-badge">
+            {deals.length} de {totalFunil} negócios do funil
+          </span>
+          <span className="fech-opcional">
+            escalados pelos critérios do dia — a etiqueta em cada um diz por quê
+          </span>
+        </div>
+      ) : null}
+
       <div className="busca-bar">
         <div className="busca">
           <span className="busca-lupa">⌕</span>
@@ -271,6 +289,12 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                   )}
                   <td className="deal">
                     {dentro && <span className="plan-flag">Hoje</span>}
+                    {/* Por que este negócio está na lista de hoje. */}
+                    {r.grupo && GRUPOS[r.grupo] && (
+                      <span className={"emp-tag grupo g-" + r.grupo} title={GRUPOS[r.grupo].motivo}>
+                        {GRUPOS[r.grupo].label}
+                      </span>
+                    )}
                     <a className="deal-link" href={r.url} target="_blank" rel="noreferrer">
                       {r.name}
                     </a>
