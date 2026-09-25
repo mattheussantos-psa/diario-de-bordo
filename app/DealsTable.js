@@ -413,6 +413,13 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                         setMsg(null);
                       }}
                     />
+                    {/* O que o gestor escreveu neste negócio ao revisar. */}
+                    {item?.obsGestor && (
+                      <p className="obs-do-gestor">
+                        <span className="brief-obs-quem gestor">gestor</span>
+                        {item.obsGestor}
+                      </p>
+                    )}
                   </td>
                 </tr>
               );

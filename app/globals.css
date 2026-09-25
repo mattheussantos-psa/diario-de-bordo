@@ -159,10 +159,21 @@ tbody tr:hover { background: var(--surface-2); }
 .brief-nome:hover { color: var(--azul); }
 .brief-val { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .brief-evo { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-/* Observação do closer no card de aprovação: é o texto que vira a tarefa. */
-.brief-obs { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--ink);
+/* Observação do closer no card de aprovação: é o texto que vira a tarefa.
+   Ao lado dela, quando existe, a do gestor — duas vozes sobre o mesmo negócio. */
+.brief-obs-par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.brief-obs-par:has(> :only-child) { grid-template-columns: 1fr; }
+.brief-obs-quem { display: block; font-size: 10px; font-weight: 700; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.brief-obs-quem.gestor { color: var(--azul); }
+.brief-obs { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink);
   background: var(--surface-2); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; }
 .brief-obs.vazia { background: none; padding: 0; color: var(--laranja); font-size: 12px; font-weight: 600; }
+.brief-obs.do-gestor { background: var(--azul-soft); }
+.brief-obs-input { min-height: 62px; }
+.obs-do-gestor { margin: 6px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink);
+  background: var(--azul-soft); border-radius: 8px; padding: 7px 9px; white-space: pre-wrap; }
+@media (max-width: 760px) { .brief-obs-par { grid-template-columns: 1fr; } }
 .brief-ativ { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .brief-ativ .aprov-ativ-desc { margin-top: 0; }
 .planbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; }

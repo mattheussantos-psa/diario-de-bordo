@@ -32,6 +32,8 @@ function normalizar(items) {
       de: typeof v?.de === "string" ? v.de : "",
       para: typeof v?.para === "string" ? v.para : "",
       estrategia: typeof v?.estrategia === "string" ? v.estrategia : "",
+      // Só o gestor escreve aqui; o closer nunca manda este campo.
+      obsGestor: typeof v?.obsGestor === "string" ? v.obsGestor : "",
     };
   }
   return out;
@@ -108,6 +110,16 @@ export async function POST(req) {
       },
       { status: 400 }
     );
+  }
+
+  // O closer não manda a observação do gestor, e salvar apaga e reinsere os
+  // itens: sem isto, um reenvio dele limparia a orientação que o gestor
+  // escreveu. O gestor continua podendo apagar a própria observação.
+  if (!ehGestor(session.user)) {
+    const atual = await getBriefing(ownerId, dia).catch(() => null);
+    for (const [id, v] of Object.entries(items)) {
+      v.obsGestor = atual?.items?.[id]?.obsGestor || "";
+    }
   }
 
   try {

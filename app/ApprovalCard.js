@@ -247,11 +247,35 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
 
               {/* A observação que o closer escreveu. É ela que vira o corpo da
                   tarefa na aprovação — quem decide precisa ler antes. */}
-              {n.observacoes ? (
-                <p className="brief-obs">{n.observacoes}</p>
-              ) : (
-                <p className="brief-obs vazia">sem observação — a tarefa vai nascer sem texto</p>
-              )}
+              <div className="brief-obs-par">
+                <div className="brief-obs-col">
+                  <span className="brief-obs-quem">closer</span>
+                  {n.observacoes ? (
+                    <p className="brief-obs">{n.observacoes}</p>
+                  ) : (
+                    <p className="brief-obs vazia">sem observação — a tarefa vai nascer sem texto</p>
+                  )}
+                </div>
+
+                {/* A palavra do gestor naquele negócio, ao lado da do closer. */}
+                {(editando || v.obsGestor) && (
+                  <div className="brief-obs-col">
+                    <span className="brief-obs-quem gestor">gestor</span>
+                    {editando ? (
+                      <textarea
+                        className="obs brief-obs-input"
+                        placeholder="Sua observação para este negócio…"
+                        value={v.obsGestor || ""}
+                        onChange={(e) =>
+                          setRascunho((r) => ({ ...r, [id]: { ...r[id], obsGestor: e.target.value } }))
+                        }
+                      />
+                    ) : (
+                      <p className="brief-obs do-gestor">{v.obsGestor}</p>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div className="brief-ativ">
                 <span className={"aprov-ativ-data" + (at.none ? " none" : "")}>
