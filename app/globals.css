@@ -159,6 +159,10 @@ tbody tr:hover { background: var(--surface-2); }
 .brief-nome:hover { color: var(--azul); }
 .brief-val { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .brief-evo { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+/* Observação do closer no card de aprovação: é o texto que vira a tarefa. */
+.brief-obs { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--ink);
+  background: var(--surface-2); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; }
+.brief-obs.vazia { background: none; padding: 0; color: var(--laranja); font-size: 12px; font-weight: 600; }
 .brief-ativ { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .brief-ativ .aprov-ativ-desc { margin-top: 0; }
 .planbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; }

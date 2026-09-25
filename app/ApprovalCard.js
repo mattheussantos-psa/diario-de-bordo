@@ -245,6 +245,14 @@ export default function ApprovalCard({ plano, deals, dia, options = [] }) {
                 )}
               </div>
 
+              {/* A observação que o closer escreveu. É ela que vira o corpo da
+                  tarefa na aprovação — quem decide precisa ler antes. */}
+              {n.observacoes ? (
+                <p className="brief-obs">{n.observacoes}</p>
+              ) : (
+                <p className="brief-obs vazia">sem observação — a tarefa vai nascer sem texto</p>
+              )}
+
               <div className="brief-ativ">
                 <span className={"aprov-ativ-data" + (at.none ? " none" : "")}>
                   {at.dateText}
