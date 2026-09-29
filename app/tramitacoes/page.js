@@ -252,7 +252,10 @@ export default async function Tramitacoes({ searchParams }) {
       <div className="evo-nota">
         <b>Os prazos.</b> {TIPOS.minuta.label}: 1 dia útil após o onboarding. {TIPOS.assinatura.label}:
         20 dias após o onboarding, entrando na lista faltando 5. {TIPOS.checklist.label}: 2 dias
-        antes do evento. A baixa é em duas mãos — quem executa marca, o líder confirma. Devolver
+        antes do evento. Depois do evento o ticket continua sendo tramitação: em{" "}
+        {TIPOS.pagamento.label} e {TIPOS.nota_fiscal.label} a pendência é a própria etapa e vale
+        enquanto o ticket estiver nela, ordenada pela palestra mais antiga — essas duas ainda não
+        têm prazo definido no processo. A baixa é em duas mãos — quem executa marca, o líder confirma. Devolver
         traz a pendência de volta com o prazo original, então vencida volta vencida. Contrato com
         status <b>Assinado</b> baixa a assinatura e a minuta sozinho.
       </div>
