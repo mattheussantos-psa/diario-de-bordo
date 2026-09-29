@@ -9,7 +9,13 @@ const SELO = {
   devolvido: { txt: "Devolvida pelo líder", cls: "devolvido" },
 };
 
-function prazoTexto(faltam) {
+function prazoTexto(p) {
+  // Etapa pós-evento não tem prazo: o que mede é o tempo desde a palestra.
+  if (p.semPrazo) {
+    const d = Math.abs(p.faltam || 0);
+    return d === 0 ? "palestra hoje" : `há ${d} dia${d === 1 ? "" : "s"} nesta etapa`;
+  }
+  const faltam = p.faltam;
   if (faltam < 0) return `${Math.abs(faltam)} dia${Math.abs(faltam) === 1 ? "" : "s"} em atraso`;
   if (faltam === 0) return "vence hoje";
   return `faltam ${faltam} dia${faltam === 1 ? "" : "s"}`;
@@ -71,19 +77,26 @@ export default function TramitacaoCard({ p, ticket, ehGestor, evolucao }) {
   }
 
   const selo = SELO[p.status];
+  // Ticket ativo sem pendência hoje: informa onde ele está, sem cobrar nada.
+  const informativo = p.tipo === "nenhuma";
 
   return (
     <div className={"tram-card" + (p.atrasada ? " atrasada" : "") + (p.status === "aguardando" ? " esperando" : "")}>
       <div className="tram-topo">
         <span className="tram-tipo">{p.label}</span>
-        <span className={"tram-prazo" + (p.atrasada ? " late" : p.faltam === 0 ? " hoje" : "")}>
-          {prazoTexto(p.faltam)}
+        <span className={"tram-prazo" + (p.atrasada ? " late" : !p.semPrazo && p.faltam === 0 ? " hoje" : "")}>
+          {prazoTexto(p)}
         </span>
       </div>
 
       <div className="tram-assunto">{ticket?.assunto || `Ticket ${p.ticketId}`}</div>
       <div className="tram-meta">
-        <span>prazo {p.prazo.slice(8, 10)}/{p.prazo.slice(5, 7)}</span>
+        {/* Pendência de etapa não tem prazo do processo: mostra a palestra. */}
+        <span>
+          {p.prazo
+            ? `${p.semPrazo ? "palestra" : "prazo"} ${p.prazo.slice(8, 10)}/${p.prazo.slice(5, 7)}`
+            : "sem data"}
+        </span>
         {ticket?.donoNome && <span>· {ticket.donoNome}</span>}
         {selo && <span className={"tram-selo " + selo.cls}>{selo.txt}</span>}
       </div>
@@ -95,7 +108,12 @@ export default function TramitacaoCard({ p, ticket, ehGestor, evolucao }) {
         <div className="tram-por">marcada por {p.marcadoPor}</div>
       )}
 
+      {informativo && (
+        <div className="tram-espera">sem pendência hoje — acompanhando a etapa</div>
+      )}
+
       {/* Como andou hoje. Travado é o que sobe para o líder. */}
+      {!informativo && (
       <div className="tram-evo">
         <div className="fech-opcoes">
           {RESULTADOS_TRAMITACAO.map((r) => (
@@ -128,7 +146,9 @@ export default function TramitacaoCard({ p, ticket, ehGestor, evolucao }) {
           </>
         )}
       </div>
+      )}
 
+      {!informativo && (
       <div className="tram-acoes">
         {msg && <span className="err">{msg}</span>}
         {p.status === "aguardando" ? (
@@ -154,6 +174,7 @@ export default function TramitacaoCard({ p, ticket, ehGestor, evolucao }) {
           </button>
         )}
       </div>
+      )}
 
       {abrirDevolver && (
         <div className="reprova">

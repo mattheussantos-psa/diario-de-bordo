@@ -6,7 +6,7 @@ import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
 import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao } from "../../lib/permissoes";
-import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPAS_TICKET, pendenciasDoTicket, TIPOS } from "../../lib/tramitacoes";
+import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPAS_TICKET, pendenciasDoTicket, TIPOS, diasEntre } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
 export const dynamic = "force-dynamic";
@@ -59,20 +59,49 @@ export default async function Tramitacoes({ searchParams }) {
 
   const todas = tickets.flatMap((t) => pendenciasDoTicket(t, hoje, registros));
 
-  // Quantas pendências estão com cada farmer, para o gestor ver a distribuição
-  // e filtrar. Conta sobre "a fazer", que é o que cobra alguém hoje.
   const donoDo = (p) => String(tickets.find((t) => t.id === p.ticketId)?.ownerId || "");
+
+  // Quantos TICKETS ativos cada farmer tem. Conta ticket, não pendência: é o
+  // número que bate com o funil de CS no HubSpot, e foi contando pendência que
+  // o board dizia 4 onde o CRM mostrava 45.
   const porFarmer = {};
-  for (const p of todas.filter((x) => x.status !== "aguardando")) {
-    const d = donoDo(p);
-    if (d) porFarmer[d] = (porFarmer[d] || 0) + 1;
+  for (const t of tickets) {
+    if (t.ownerId) porFarmer[t.ownerId] = (porFarmer[t.ownerId] || 0) + 1;
   }
 
+  // Nenhum ticket ativo some do board: o que não tem pendência hoje entra como
+  // acompanhamento, mostrando a etapa em que está. Sem isso o farmer via menos
+  // tickets do que tem na mão — 4 onde o CRM mostrava 45.
+  const comPendencia = new Set(todas.map((p) => p.ticketId));
+  const acompanhamento = tickets
+    .filter((t) => !comPendencia.has(t.id))
+    .map((t) => ({
+      ticketId: t.id,
+      tipo: "nenhuma",
+      label: ETAPAS_TICKET[t.etapa] || "Em tramitação",
+      prazo: t.evento || null,
+      faltam: t.evento ? diasEntre(hoje, t.evento) : 0,
+      atrasada: false,
+      semPrazo: true,
+      eventoPassado: false,
+      status: "aberta",
+      marcadoPor: "",
+      decididoPor: "",
+      motivo: "",
+    }));
+  const tudo = [...todas, ...acompanhamento];
+
   const farmerSel = searchParams?.owner || "";
-  const doFarmer = farmerSel ? todas.filter((p) => donoDo(p) === farmerSel) : todas;
+  const doFarmer = farmerSel ? tudo.filter((p) => donoDo(p) === farmerSel) : tudo;
 
   const abertas = doFarmer.filter((p) => p.status !== "aguardando");
   const aguardando = doFarmer.filter((p) => p.status === "aguardando");
+  // "A fazer" conta o que cobra alguém: acompanhamento não cobra nada.
+  const aFazer = abertas.filter((p) => p.tipo !== "nenhuma");
+  // Tickets do recorte da tela — com farmer escolhido, só os dele.
+  const ticketsDoRecorte = farmerSel
+    ? tickets.filter((t) => String(t.ownerId) === farmerSel)
+    : tickets;
   const bruta = filtro === "aguardando" ? aguardando : filtro === "todas" ? doFarmer : abertas;
 
   // Evento já realizado vai para o fim, em bloco próprio: o ticket segue
@@ -184,7 +213,7 @@ export default async function Tramitacoes({ searchParams }) {
         <div className="kpis">
           <div className="kpi">
             <div className="lab">A fazer</div>
-            <div className="val">{abertas.length}</div>
+            <div className="val">{aFazer.length}</div>
             <div className="sub">pendências na janela de prazo</div>
           </div>
           <div className="kpi">
@@ -199,9 +228,15 @@ export default async function Tramitacoes({ searchParams }) {
           </div>
           <div className="kpi">
             <div className="lab">Tickets ativos</div>
-            <div className="val">{tickets.length}</div>
+            <div className="val">{ticketsDoRecorte.length}</div>
             <div className="sub">
-              {eqLider ? "equipe " + eqLider.equipe : gestor ? "CS inteiro" : "seus tickets"}
+              {farmerSel
+                ? "do farmer selecionado"
+                : eqLider
+                ? "equipe " + eqLider.equipe
+                : gestor
+                ? "CS inteiro"
+                : "seus tickets"}
             </div>
           </div>
         </div>
