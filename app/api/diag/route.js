@@ -2,7 +2,7 @@ import { auth } from "../../../auth";
 import { getDayBriefings, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
 import { NOME_CLOSER, SEG_CLOSER } from "../../../lib/config";
-import { diagnosticoTarefas } from "../../../lib/hubspot";
+import { diagnosticoTarefas, historicoDeProps } from "../../../lib/hubspot";
 
 // Diagnóstico: o que está gravado para o dia, exatamente como o banco devolve.
 // ponytail: rota de apoio; remover quando o fluxo estiver estável.
@@ -17,6 +17,16 @@ export async function GET(req) {
   // ?deal=<id> responde só sobre a criação de tarefa naquele negócio.
   const deal = searchParams.get("deal");
   if (deal) return Response.json(await diagnosticoTarefas(deal));
+
+  // ?hist=<id>&props=a,b — quem alterou cada propriedade, e por qual fonte.
+  const hist = searchParams.get("hist");
+  if (hist) {
+    const props = (searchParams.get("props") || "temperatura_atual,estrategia,observacoes")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return Response.json(await historicoDeProps(hist, props));
+  }
 
   const dia = searchParams.get("dia") || dayKey();
   const briefings = await getDayBriefings(dia);
